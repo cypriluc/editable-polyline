@@ -10,10 +10,14 @@ svg {
 path {
   fill: none;
   stroke: purple;
-  stroke-width: 2px;
+  stroke-width: 1px;
 }
 circle {
-  fill: none;
+  fill: white;
   stroke: purple;
-  stroke-width: 2px;
+  stroke-width: 1px;
+}
+.clear-svg {
+  top: 10px;
+  right: 10px;
 }
