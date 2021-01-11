@@ -2,7 +2,7 @@
 const svgWidth = 700;
 const svgHeight = 450;
 const pointRadius = 4;
-const pointRadiusHover = 6;
+const pointRadiusHover = 8;
 const lineGenerator = d3.line();
 const svg = d3.select("svg");
 const dragHandler = d3.drag();
@@ -24,7 +24,7 @@ let newPoint;
 let placingPoint;
 let cursorOnPt;
 let drawingStatus;
-let plineType;
+let polylineType;
 let pathData;
 
 // set svg size
@@ -33,6 +33,15 @@ svg.attr("width", svgWidth).attr("height", svgHeight);
 setInitialVariables();
 registerAddPtEvent();
 registerDragEvent();
+
+function setInitialVariables() {
+  points = [];
+  newPoint = [];
+  placingPoint = [];
+  cursorOnPt = noPoint;
+  drawingStatus = drawing;
+  polylineType = opened;
+}
 
 // register event - add new point on click in svg
 function registerAddPtEvent() {
@@ -44,10 +53,10 @@ function registerAddPtEvent() {
         updateGeometry();
       }
       if (cursorOnPt === 1) {
-        closePline();
+        finishClosedPolyline();
       }
       if (cursorOnPt === 3) {
-        finishPline();
+        finishOpenedPolyline();
       }
     }
   });
@@ -83,7 +92,52 @@ function registerDragEvent() {
   });
 }
 
-// functions
+function registerPointEvents() {
+  let circles = d3.select(".points").selectAll("circle");
+  // hover on circles
+  circles
+    .on("mouseover", function () {
+      let circle = d3.select(this);
+      let ptIndex = getPtId(this);
+      if (drawingStatus) {
+        if (ptIndex === 0) {
+          cursorOnPt = firstPoint;
+          ptHoverOn(circle);
+        } else if (ptIndex === points.length - 1) {
+          cursorOnPt = lastPoint;
+          ptHoverOn(circle);
+        } else {
+          cursorOnPt = middlePoint;
+        }
+      } else {
+        ptHoverOn(circle);
+      }
+    })
+    .on("mouseout", function () {
+      let circle = d3.select(this);
+      ptHoverOff(circle);
+      cursorOnPt = noPoint;
+    });
+  //call drag handler
+  dragHandler(circles);
+}
+
+function ptHoverOn(circle) {
+  circle
+    .transition()
+    .duration(100)
+    .attr("r", pointRadiusHover)
+    .attr("fill", "purple");
+}
+
+function ptHoverOff(circle) {
+  circle
+    .transition()
+    .duration(100)
+    .attr("r", pointRadius)
+    .attr("fill", "white");
+}
+
 function updateGeometry() {
   updateCircles();
   updatePolyline();
@@ -109,40 +163,6 @@ function updateCircles() {
   registerPointEvents();
 }
 
-function registerPointEvents() {
-  let circles = d3.select(".points").selectAll("circle");
-  // hover on circles
-  circles
-    .on("mouseover", function () {
-      let circle = d3.select(this);
-      circle
-        .transition()
-        .duration(100)
-        .attr("r", pointRadiusHover)
-        .attr("fill", "purple");
-      let ptIndex = getPtId(this);
-      if (ptIndex === 0) {
-        cursorOnPt = firstPoint;
-      } else if (ptIndex === points.length - 1) {
-        cursorOnPt = lastPoint;
-      } else {
-        cursorOnPt = middlePoint;
-      }
-    })
-    .on("mouseout", function () {
-      let circle = d3.select(this);
-      circle
-        .transition()
-        .duration(100)
-        .attr("r", pointRadius)
-        .attr("fill", "white");
-      cursorOnPt = noPoint;
-    });
-
-  //call drag handler
-  dragHandler(circles);
-}
-
 function updatePolyline() {
   if (drawingStatus) {
     let temporaryPoints = [];
@@ -151,25 +171,48 @@ function updatePolyline() {
       placingPoint = [d.layerX, d.layerY];
       temporaryPoints.push(placingPoint);
       pathData = lineGenerator(temporaryPoints);
-      d3.select(".polyline").attr("d", pathData);
+      setPath();
     });
   } else {
-    if (plineType) {
-      let closeString = ",Z";
-      pathData = lineGenerator(points);
-      closedPathData = pathData.concat(closeString);
-      d3.select(".polyline").attr("d", closedPathData);
-    } else {
-      pathData = lineGenerator(points);
-      d3.select(".polyline").attr("d", pathData);
-    }
+    updatePath();
   }
+}
 
-  /*   if (Array.isArray(points) && points.length > 1) {
-    d3.select(".polyline").attr("d", pathData);
+function updatePath() {
+  pathData = lineGenerator(points);
+  if (polylineType) {
+    let closeString = ",Z";
+    pathData = pathData.concat(closeString);
+    setPath();
   } else {
-    d3.select(".polyline").attr("d", "");
-  } */
+    setPath();
+  }
+}
+
+function setPath() {
+  d3.select(".polyline").attr("d", pathData);
+}
+
+function finishClosedPolyline() {
+  polylineType = closed;
+  removePtEvents();
+  updatePath();
+}
+
+function finishOpenedPolyline() {
+  polylineType = opened;
+  removePtEvents();
+  updatePath();
+}
+
+function getPtId(target) {
+  return parseInt(target.id.split("point")[1]);
+}
+
+function removePtEvents() {
+  svg.on("mousemove", null);
+  svg.on("click", null);
+  drawingStatus = notDrawing;
 }
 
 function clearSvg() {
@@ -178,37 +221,4 @@ function clearSvg() {
   setInitialVariables();
   registerAddPtEvent();
   registerDragEvent();
-}
-
-function getPtId(target) {
-  return parseInt(target.id.split("point")[1]);
-}
-
-function closePline() {
-  svg.on("mousemove", null);
-  svg.on("click", null);
-  drawingStatus = notDrawing;
-  plineType = closed;
-  let closeString = ",Z";
-  pathData = lineGenerator(points);
-  closedPathData = pathData.concat(closeString);
-  d3.select(".polyline").attr("d", closedPathData);
-}
-
-function finishPline() {
-  svg.on("mousemove", null);
-  svg.on("click", null);
-  plineType = opened;
-  drawingStatus = notDrawing;
-  pathData = lineGenerator(points);
-  d3.select(".polyline").attr("d", pathData);
-}
-
-function setInitialVariables() {
-  points = [];
-  newPoint = [];
-  placingPoint = [];
-  cursorOnPt = noPoint;
-  drawingStatus = drawing;
-  plineType = opened;
 }
