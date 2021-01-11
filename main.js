@@ -1,18 +1,22 @@
 // global constants
-const svgWidth = d3.select("svg").attr("width");
-const svgHeight = d3.select("svg").attr("height");
-const lineGenerator = d3.line();
+const svgWidth = 700;
+const svgHeight = 450;
 const pointRadius = 4;
 const pointRadiusHover = 6;
+const lineGenerator = d3.line();
 
 // global variables
 let points = [];
 let newPoint = [];
 let cursorOnPt = false;
 let pathData;
+let svg = d3.select("svg");
+let dragHandler = d3.drag();
+
+// set svg size
+svg.attr("width", svgWidth).attr("height", svgHeight);
 
 // register event - add new point on click in svg
-let svg = d3.select("svg");
 svg.on("click", function (d) {
   if (!cursorOnPt) {
     newPoint = [d.layerX, d.layerY];
@@ -22,7 +26,7 @@ svg.on("click", function (d) {
 });
 
 // register event - drag existing point
-let dragHandler = d3.drag().on("drag", function (d) {
+dragHandler.on("drag", function (d) {
   let circle = d3.select(this);
   let ptIndex = parseInt(circle.attr("id").slice(5));
   let newX;
@@ -46,18 +50,18 @@ let dragHandler = d3.drag().on("drag", function (d) {
 
   points[ptIndex] = [newX, newY];
   circle.attr("cx", newX).attr("cy", newY);
-  updateGeometry();
+  updatePolyline();
 });
 
-// function definitions
+// functions
 function updateGeometry() {
-  pathData = lineGenerator(points);
   updateCircles();
   updatePolyline();
 }
 
 function updateCircles() {
   let circles = d3.select(".points").selectAll("circle").data(points);
+  circles.exit().remove();
   circles
     .enter()
     .append("circle")
@@ -72,7 +76,6 @@ function updateCircles() {
     })
     .attr("r", pointRadius)
     .attr("fill", "white");
-  circles.exit().remove();
   registerPointEvents();
 }
 
@@ -102,6 +105,7 @@ function registerPointEvents() {
 }
 
 function updatePolyline() {
+  pathData = lineGenerator(points);
   if (Array.isArray(points) && points.length > 1) {
     d3.select(".polyline").attr("d", pathData);
   } else {
