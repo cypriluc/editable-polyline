@@ -4,14 +4,21 @@ const svgHeight = 450;
 const pointRadius = 4;
 const pointRadiusHover = 6;
 const lineGenerator = d3.line();
+const svg = d3.select("svg");
+const dragHandler = d3.drag();
+
+// cursor positions
+const noPoint = 0;
+const firstPoint = 1;
+const middlePoint = 2;
+const lastPoint = 3;
 
 // global variables
 let points = [];
 let newPoint = [];
-let cursorOnPt = false;
+let placingPoint = [];
+let cursorOnPt = noPoint;
 let pathData;
-let svg = d3.select("svg");
-let dragHandler = d3.drag();
 
 // set svg size
 svg.attr("width", svgWidth).attr("height", svgHeight);
@@ -23,12 +30,20 @@ svg.on("click", function (d) {
     points.push(newPoint);
     updateGeometry();
   }
+  if (cursorOnPt === 1) {
+    console.log("close pline");
+    //closePline();
+  }
+  if (cursorOnPt === 3) {
+    console.log("finish pline");
+    //finishPline();
+  }
 });
 
 // register event - drag existing point
 dragHandler.on("drag", function (d) {
   let circle = d3.select(this);
-  let ptIndex = parseInt(circle.attr("id").slice(5));
+  let ptIndex = getPtId(this);
   let newX;
   let newY;
 
@@ -84,20 +99,29 @@ function registerPointEvents() {
   // hover on circles
   circles
     .on("mouseover", function () {
-      d3.select(this)
+      let circle = d3.select(this);
+      circle
         .transition()
         .duration(100)
         .attr("r", pointRadiusHover)
         .attr("fill", "purple");
-      cursorOnPt = true;
+      let ptIndex = getPtId(this);
+      if (ptIndex === 0) {
+        cursorOnPt = firstPoint;
+      } else if (ptIndex === points.length - 1) {
+        cursorOnPt = lastPoint;
+      } else {
+        cursorOnPt = middlePoint;
+      }
     })
     .on("mouseout", function () {
-      d3.select(this)
+      let circle = d3.select(this);
+      circle
         .transition()
         .duration(100)
         .attr("r", pointRadius)
         .attr("fill", "white");
-      cursorOnPt = false;
+      cursorOnPt = noPoint;
     });
 
   //call drag handler
@@ -105,12 +129,19 @@ function registerPointEvents() {
 }
 
 function updatePolyline() {
-  pathData = lineGenerator(points);
-  if (Array.isArray(points) && points.length > 1) {
+  let temporaryPoints = [];
+  svg.on("mousemove", function (d) {
+    temporaryPoints = Array.from(points);
+    placingPoint = [d.layerX, d.layerY];
+    temporaryPoints.push(placingPoint);
+    pathData = lineGenerator(temporaryPoints);
+    d3.select(".polyline").attr("d", pathData);
+  });
+  /*   if (Array.isArray(points) && points.length > 1) {
     d3.select(".polyline").attr("d", pathData);
   } else {
     d3.select(".polyline").attr("d", "");
-  }
+  } */
 }
 
 function clearSvg() {
@@ -118,4 +149,8 @@ function clearSvg() {
   newPoint = [];
   d3.select(".polyline").attr("d", "");
   d3.select(".points").selectAll("circle").remove();
+}
+
+function getPtId(target) {
+  return parseInt(target.id.split("point")[1]);
 }
