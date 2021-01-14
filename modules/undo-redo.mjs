@@ -121,7 +121,7 @@ const trackStateObject = createStateObject();
 const trackManager = createCommandManager(trackStateObject);
 /* console.log(trackStateObject.points); */
 
-trackManager.doCommand(ADD, [200, 300]);
+/* trackManager.doCommand(ADD, [200, 300]);
 console.log("add");
 console.log(trackStateObject.points[0]);
 
@@ -169,6 +169,22 @@ console.log(trackStateObject.points);
 trackManager.undo();
 console.log("undo");
 console.log(trackStateObject.points[0]);
-console.log(trackStateObject.points[1]);
+console.log(trackStateObject.points[1]); */
 
-export { trackStateObject, trackManager };
+export {
+  createStateObject,
+  createAddPointCommand,
+  createMovePointCommand,
+  createChangeDrawingStatusCommand,
+  createChangePolylineTypeCommand,
+  createClearPointsArrayCommand,
+  commands,
+  createCommandManager,
+  trackStateObject,
+  trackManager,
+  ADD,
+  MOVE,
+  DRAWING,
+  POLYLINE_TYPE,
+  CLEAR,
+};
