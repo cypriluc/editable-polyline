@@ -6,13 +6,15 @@ const SVG_WIDTH = 700;
 const SVG_HEIGHT = 450;
 const POINT_RADIUS = 4;
 const POINT_RADIUS_HOVER = 8;
+// d3 objects / methods
 const LINE_GENERATOR = d3.line();
 const SVG = d3.select("svg");
 const DRAG_HANDLER = d3.drag();
+// buttons in DOM
 const CLEAR_BTN = document.getElementById("clear-svg");
 const UNDO_BTN = document.getElementById("undo");
 const REDO_BTN = document.getElementById("redo");
-
+// undo-redo module most used
 const command = track.trackManager.doCommand;
 const addPt = track.ADD;
 const movePt = track.MOVE;
@@ -36,71 +38,27 @@ let cursorPosition = STATES.cursorPosition.noPoint;
 
 // set svg size
 SVG.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
-// register clear Canvas button function
-CLEAR_BTN.onclick = function () {
-  d3.select(".polyline").attr("d", "");
-  d3.select(".points").selectAll("circle").remove();
-  setInitialVariables();
-  registerAddPtEvent();
-  registerDragEvent();
-};
-// register undo button function
-UNDO_BTN.onclick = function () {
-  track.trackManager.undo();
-  updateGeometry();
-  registerAddPtEvent();
-};
-// register redo button function
-REDO_BTN.onclick = function () {
-  track.trackManager.redo();
-  updateGeometry();
-  registerAddPtEvent();
-};
-// register undo / redo on keypress
-document.onkeypress = function (e) {
-  if (e.ctrlKey && e.code === "KeyY") {
-    track.trackManager.undo();
-    updateGeometry();
-    registerAddPtEvent();
-  }
-  if (e.ctrlKey && e.code === "KeyZ") {
-    track.trackManager.redo();
-    updateGeometry();
-    registerAddPtEvent();
-  }
-};
-
-registerAddPtEvent();
-registerDragEvent();
-
-function setInitialVariables() {
-  command(clearPoints);
-  command(setDrawingStatus, STATES.drawingStatus.drawing);
-  command(setPolylineType, STATES.polylineType.opened);
-}
 
 // register event - add new point on click in svg
-function registerAddPtEvent() {
-  SVG.on("click", function (d) {
-    if (drawingStatus()) {
-      if (cursorPosition === 0) {
-        let newPoint = [d.layerX, d.layerY];
-        command(addPt, newPoint);
-        updateGeometry();
-      }
-      if (cursorPosition === 1) {
-        finishClosedPolyline();
-      }
-      if (cursorPosition === 3) {
-        finishOpenedPolyline();
-      }
+SVG.on("click", function (d) {
+  if (drawingStatus()) {
+    if (cursorPosition === 0) {
+      let newPoint = [d.layerX, d.layerY];
+      command(addPt, newPoint);
+      updateGeometry();
     }
-  });
-}
+    if (cursorPosition === 1) {
+      finishClosedPolyline();
+    }
+    if (cursorPosition === 3) {
+      finishOpenedPolyline();
+    }
+  }
+});
 
 // register event - drag existing point
-function registerDragEvent() {
-  DRAG_HANDLER.on("drag", function (d) {
+DRAG_HANDLER.on("drag", function (d) {
+  if (!drawingStatus()) {
     let circle = d3.select(this);
     let ptIndex = getPtId(this);
     let newX;
@@ -125,7 +83,41 @@ function registerDragEvent() {
     command(movePt, { index: ptIndex, point: [newX, newY] });
     circle.attr("cx", newX).attr("cy", newY);
     updatePolyline();
-  });
+  }
+});
+
+// register clear Canvas button function
+CLEAR_BTN.onclick = function () {
+  d3.select(".polyline").attr("d", "");
+  d3.select(".points").selectAll("circle").remove();
+  setInitialVariables();
+};
+// register undo button function
+UNDO_BTN.onclick = function () {
+  track.trackManager.undo();
+  updateGeometry();
+};
+// register redo button function
+REDO_BTN.onclick = function () {
+  track.trackManager.redo();
+  updateGeometry();
+};
+// register undo / redo on keypress
+document.onkeypress = function (e) {
+  if (e.ctrlKey && e.code === "KeyY") {
+    track.trackManager.undo();
+    updateGeometry();
+  }
+  if (e.ctrlKey && e.code === "KeyZ") {
+    track.trackManager.redo();
+    updateGeometry();
+  }
+};
+
+function setInitialVariables() {
+  command(clearPoints);
+  command(setDrawingStatus, STATES.drawingStatus.drawing);
+  command(setPolylineType, STATES.polylineType.opened);
 }
 
 function registerPointEvents() {
@@ -231,13 +223,13 @@ function setPath() {
 
 function finishClosedPolyline() {
   command(setPolylineType, STATES.polylineType.closed);
-  removePtEvents();
+  drawingFinished();
   updatePath();
 }
 
 function finishOpenedPolyline() {
   command(setPolylineType, STATES.polylineType.opened);
-  removePtEvents();
+  drawingFinished();
   updatePath();
 }
 
@@ -245,8 +237,7 @@ function getPtId(target) {
   return parseInt(target.id.split("point")[1]);
 }
 
-function removePtEvents() {
+function drawingFinished() {
   SVG.on("mousemove", null);
-  SVG.on("click", null);
   command(setDrawingStatus, STATES.drawingStatus.notDrawing);
 }

@@ -98,6 +98,11 @@ const createCommandManager = (target) => {
         history.push(concreteCommand);
         position += 1;
         concreteCommand.execute();
+        console.log(
+          "position: " + position,
+          "history length: " + history.length,
+          "points: " + target.points.length
+        );
       }
     },
 
@@ -105,6 +110,8 @@ const createCommandManager = (target) => {
       if (position > 0) {
         history[position].undo();
         position -= 1;
+        console.log(this.getCurrentState());
+        console.log("points: " + target.points.length);
       }
     },
 
@@ -112,7 +119,15 @@ const createCommandManager = (target) => {
       if (position < history.length - 1) {
         position += 1;
         history[position].execute();
+        console.log(this.getCurrentState());
+        console.log("points: " + target.points.length);
       }
+    },
+    getCurrentState() {
+      return {
+        position,
+        historyLength: history.length,
+      };
     },
   };
 };
