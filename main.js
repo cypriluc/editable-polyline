@@ -1,3 +1,6 @@
+import { STATES } from "./modules/states.mjs";
+import * as TRACK from "./modules/undo-redo.mjs";
+
 // global constants
 const SVG_WIDTH = 700;
 const SVG_HEIGHT = 450;
@@ -6,25 +9,6 @@ const POINT_RADIUS_HOVER = 8;
 const LINE_GENERATOR = d3.line();
 const SVG = d3.select("svg");
 const DRAG_HANDLER = d3.drag();
-
-const STATES = {
-  cursorPosition: {
-    noPoint: 0,
-    firstPoint: 1,
-    middlePoint: 2,
-    lastPoint: 3,
-  },
-
-  drawingStatus: {
-    notDrawing: 0,
-    drawing: 1,
-  },
-
-  polylineType: {
-    opened: 0,
-    closed: 1,
-  },
-};
 
 // global variables
 let points;

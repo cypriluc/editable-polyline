@@ -1,3 +1,5 @@
+import { STATES } from "./states.mjs";
+
 const createStateObject = () => {
   return {
     points: [],
