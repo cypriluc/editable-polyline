@@ -1,5 +1,5 @@
 import { STATES } from "./modules/states.mjs";
-import * as TRACK from "./modules/undo-redo.mjs";
+import { trackStateObject, trackManager } from "./modules/undo-redo.mjs";
 
 // global constants
 const SVG_WIDTH = 700;
@@ -16,7 +16,7 @@ let drawingStatus;
 let polylineType;
 
 let pathData;
-let cursorPosition;
+let cursorPosition = STATES.cursorPosition.noPoint;
 
 // set svg size
 SVG.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
@@ -29,7 +29,6 @@ function setInitialVariables() {
   points = [];
   drawingStatus = STATES.drawingStatus.drawing;
   polylineType = STATES.polylineType.opened;
-  cursorPosition = STATES.cursorPosition.noPoint;
 }
 
 // register event - add new point on click in svg
