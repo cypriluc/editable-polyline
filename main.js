@@ -9,6 +9,9 @@ const POINT_RADIUS_HOVER = 8;
 const LINE_GENERATOR = d3.line();
 const SVG = d3.select("svg");
 const DRAG_HANDLER = d3.drag();
+const CLEAR_BTN = document.getElementById("clear-svg");
+const UNDO_BTN = document.getElementById("undo");
+const REDO_BTN = document.getElementById("redo");
 
 const command = track.trackManager.doCommand;
 const addPt = track.ADD;
@@ -33,13 +36,38 @@ let cursorPosition = STATES.cursorPosition.noPoint;
 
 // set svg size
 SVG.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
-// clear Canvas button function
-document.getElementById("clear-svg").onclick = function clearSvg() {
+// register clear Canvas button function
+CLEAR_BTN.onclick = function () {
   d3.select(".polyline").attr("d", "");
   d3.select(".points").selectAll("circle").remove();
   setInitialVariables();
   registerAddPtEvent();
   registerDragEvent();
+};
+// register undo button function
+UNDO_BTN.onclick = function () {
+  track.trackManager.undo();
+  updateGeometry();
+  registerAddPtEvent();
+};
+// register redo button function
+REDO_BTN.onclick = function () {
+  track.trackManager.redo();
+  updateGeometry();
+  registerAddPtEvent();
+};
+// register undo / redo on keypress
+document.onkeypress = function (e) {
+  if (e.ctrlKey && e.code === "KeyY") {
+    track.trackManager.undo();
+    updateGeometry();
+    registerAddPtEvent();
+  }
+  if (e.ctrlKey && e.code === "KeyZ") {
+    track.trackManager.redo();
+    updateGeometry();
+    registerAddPtEvent();
+  }
 };
 
 registerAddPtEvent();

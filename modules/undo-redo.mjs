@@ -119,57 +119,6 @@ const createCommandManager = (target) => {
 
 const trackStateObject = createStateObject();
 const trackManager = createCommandManager(trackStateObject);
-/* console.log(trackStateObject.points); */
-
-/* trackManager.doCommand(ADD, [200, 300]);
-console.log("add");
-console.log(trackStateObject.points[0]);
-
-trackManager.doCommand(ADD, [100, 200]);
-console.log("add");
-console.log(trackStateObject.points[0]);
-console.log(trackStateObject.points[1]);
-
-trackManager.doCommand(MOVE, { index: 1, point: [50, 50] });
-console.log("move");
-console.log(trackStateObject.points[0]);
-console.log(trackStateObject.points[1]);
-
-trackManager.doCommand(DRAWING, STATES.drawingStatus.notDrawing);
-console.log("drawing");
-console.log("drawing status: " + trackStateObject.drawingStatus);
-
-trackManager.doCommand(POLYLINE_TYPE, STATES.polylineType.closed);
-console.log("polyline-type");
-console.log("polyline-type: " + trackStateObject.polylineType);
-
-trackManager.undo();
-console.log("undo");
-console.log("polyline-type: " + trackStateObject.polylineType);
-
-trackManager.undo();
-console.log("undo");
-console.log("drawing status: " + trackStateObject.drawingStatus);
-
-trackManager.undo();
-console.log("undo");
-console.log(trackStateObject.points[0]);
-console.log(trackStateObject.points[1]);
-
-trackManager.redo();
-console.log("redo");
-console.log("drawing status: " + trackStateObject.drawingStatus);
-console.log(trackStateObject.points[0]);
-console.log(trackStateObject.points[1]);
-
-trackManager.doCommand(CLEAR);
-console.log("clear");
-console.log(trackStateObject.points);
-
-trackManager.undo();
-console.log("undo");
-console.log(trackStateObject.points[0]);
-console.log(trackStateObject.points[1]); */
 
 export {
   createStateObject,
