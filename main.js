@@ -80,9 +80,18 @@ DRAG_HANDLER.on("drag", function (d) {
       newY = POINT_RADIUS;
     }
 
-    command(movePt, { index: ptIndex, point: [newX, newY] });
     circle.attr("cx", newX).attr("cy", newY);
-    updatePolyline();
+    let temporaryPoints = Array.from(points());
+    let temporaryPoint = [newX, newY];
+    temporaryPoints[ptIndex] = temporaryPoint;
+    generatePathData(temporaryPoints);
+  }
+});
+
+DRAG_HANDLER.on("end", function (d) {
+  if (!drawingStatus()) {
+    let ptIndex = getPtId(this);
+    command(movePt, { index: ptIndex, point: [d.x, d.y] });
   }
 });
 
@@ -177,6 +186,7 @@ function updateCircles() {
   circles
     .enter()
     .append("circle")
+    .merge(circles)
     .attr("id", function (d, i) {
       return "point" + i;
     })
@@ -198,16 +208,15 @@ function updatePolyline() {
       temporaryPoints = Array.from(points());
       let placingPoint = [d.layerX, d.layerY];
       temporaryPoints.push(placingPoint);
-      pathData = LINE_GENERATOR(temporaryPoints);
-      setPath();
+      generatePathData(temporaryPoints);
     });
   } else {
-    updatePath();
+    generatePathData(points());
   }
 }
 
-function updatePath() {
-  pathData = LINE_GENERATOR(points());
+function generatePathData(points) {
+  pathData = LINE_GENERATOR(points);
   if (polylineType()) {
     let closeString = ",Z";
     pathData = pathData.concat(closeString);
@@ -224,13 +233,13 @@ function setPath() {
 function finishClosedPolyline() {
   command(setPolylineType, STATES.polylineType.closed);
   drawingFinished();
-  updatePath();
+  generatePathData(points());
 }
 
 function finishOpenedPolyline() {
   command(setPolylineType, STATES.polylineType.opened);
   drawingFinished();
-  updatePath();
+  generatePathData(points());
 }
 
 function getPtId(target) {

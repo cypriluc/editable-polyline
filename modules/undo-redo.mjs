@@ -98,10 +98,13 @@ const createCommandManager = (target) => {
         history.push(concreteCommand);
         position += 1;
         concreteCommand.execute();
+        console.log(commandType);
         console.log(
-          "position: " + position,
-          "history length: " + history.length,
-          "points: " + target.points.length
+          "position:" + position,
+          "history length:" + history.length,
+          "points:" + target.points.length,
+          "drawing:" + target.drawingStatus,
+          "polyline-type:" + target.polylineType
         );
       }
     },
@@ -110,8 +113,8 @@ const createCommandManager = (target) => {
       if (position > 0) {
         history[position].undo();
         position -= 1;
-        console.log(this.getCurrentState());
-        console.log("points: " + target.points.length);
+        console.log("UNDO");
+        this.logCurrentState();
       }
     },
 
@@ -119,15 +122,18 @@ const createCommandManager = (target) => {
       if (position < history.length - 1) {
         position += 1;
         history[position].execute();
-        console.log(this.getCurrentState());
-        console.log("points: " + target.points.length);
+        console.log("REDO");
+        this.logCurrentState();
       }
     },
-    getCurrentState() {
-      return {
-        position,
-        historyLength: history.length,
-      };
+    logCurrentState() {
+      console.log(
+        "position:" + position,
+        "history length:" + history.length,
+        "points:" + target.points.length,
+        "drawing:" + target.drawingStatus,
+        "polyline-type:" + target.polylineType
+      );
     },
   };
 };
