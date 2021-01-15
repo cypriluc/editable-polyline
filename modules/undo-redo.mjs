@@ -33,25 +33,17 @@ const createMovePointCommand = (stateObject, ptObj) => {
   };
 };
 
-const createChangeDrawingStatusCommand = (stateObject, status) => {
+const createSwitchStatusCommand = (stateObject, statusObj) => {
   const previousDrawingStatus = stateObject.drawingStatus;
+  const previousPolylineType = stateObject.polylineType;
+
   return {
     execute() {
-      stateObject.drawingStatus = status;
+      stateObject.drawingStatus = statusObj.drawStatus;
+      stateObject.polylineType = statusObj.plineType;
     },
     undo() {
       stateObject.drawingStatus = previousDrawingStatus;
-    },
-  };
-};
-
-const createChangePolylineTypeCommand = (stateObject, type) => {
-  const previousPolylineType = stateObject.polylineType;
-  return {
-    execute() {
-      stateObject.polylineType = type;
-    },
-    undo() {
       stateObject.polylineType = previousPolylineType;
     },
   };
@@ -71,15 +63,13 @@ const createClearPointsArrayCommand = (stateObject) => {
 
 const ADD = "ADD";
 const MOVE = "MOVE";
-const DRAWING = "DRAWING";
-const POLYLINE_TYPE = "POLYLINE_TYPE";
+const STATUS = "STATUS";
 const CLEAR = "CLEAR";
 
 const commands = {
   [ADD]: createAddPointCommand,
   [MOVE]: createMovePointCommand,
-  [DRAWING]: createChangeDrawingStatusCommand,
-  [POLYLINE_TYPE]: createChangePolylineTypeCommand,
+  [STATUS]: createSwitchStatusCommand,
   [CLEAR]: createClearPointsArrayCommand,
 };
 
@@ -145,8 +135,7 @@ export {
   createStateObject,
   createAddPointCommand,
   createMovePointCommand,
-  createChangeDrawingStatusCommand,
-  createChangePolylineTypeCommand,
+  createSwitchStatusCommand,
   createClearPointsArrayCommand,
   commands,
   createCommandManager,
@@ -154,7 +143,6 @@ export {
   trackManager,
   ADD,
   MOVE,
-  DRAWING,
-  POLYLINE_TYPE,
+  STATUS,
   CLEAR,
 };

@@ -7,19 +7,18 @@ const SVG_HEIGHT = 450;
 const POINT_RADIUS = 4;
 const POINT_RADIUS_HOVER = 8;
 // d3 objects / methods
-const LINE_GENERATOR = d3.line();
-const SVG = d3.select("svg");
-const DRAG_HANDLER = d3.drag();
+const lineGenerator = d3.line();
+const svgDOM = d3.select("svg");
+const dragHandler = d3.drag();
 // buttons in DOM
-const CLEAR_BTN = document.getElementById("clear-svg");
-const UNDO_BTN = document.getElementById("undo");
-const REDO_BTN = document.getElementById("redo");
+const clearBtn = document.getElementById("clear-svg");
+const undoBtn = document.getElementById("undo");
+const redoBtn = document.getElementById("redo");
 // undo-redo module most used
 const command = track.trackManager.doCommand;
 const addPt = track.ADD;
 const movePt = track.MOVE;
-const setDrawingStatus = track.DRAWING;
-const setPolylineType = track.POLYLINE_TYPE;
+const updateStatus = track.STATUS;
 const clearPoints = track.CLEAR;
 
 // return values from undo-redo.mjs
@@ -35,12 +34,15 @@ const polylineType = () => {
 
 let pathData;
 let cursorPosition = STATES.cursorPosition.noPoint;
+let temporaryPoint;
+let ptIndex;
+let temporaryPoints = [];
 
 // set svg size
-SVG.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
+svgDOM.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
 
 // register event - add new point on click in svg
-SVG.on("click", function (d) {
+svgDOM.on("click", function (d) {
   if (drawingStatus()) {
     if (cursorPosition === 0) {
       let newPoint = [d.layerX, d.layerY];
@@ -57,10 +59,10 @@ SVG.on("click", function (d) {
 });
 
 // register event - drag existing point
-DRAG_HANDLER.on("drag", function (d) {
+dragHandler.on("drag", function (d) {
   if (!drawingStatus()) {
     let circle = d3.select(this);
-    let ptIndex = getPtId(this);
+    ptIndex = getPtId(this);
     let newX;
     let newY;
 
@@ -81,33 +83,35 @@ DRAG_HANDLER.on("drag", function (d) {
     }
 
     circle.attr("cx", newX).attr("cy", newY);
-    let temporaryPoints = Array.from(points());
-    let temporaryPoint = [newX, newY];
+    temporaryPoints = Array.from(points());
+    temporaryPoint = [newX, newY];
     temporaryPoints[ptIndex] = temporaryPoint;
     generatePathData(temporaryPoints);
+    temporaryPoints = [];
   }
 });
 
-DRAG_HANDLER.on("end", function (d) {
+dragHandler.on("end", function (d) {
   if (!drawingStatus()) {
-    let ptIndex = getPtId(this);
-    command(movePt, { index: ptIndex, point: [d.x, d.y] });
+    command(movePt, { index: ptIndex, point: temporaryPoint });
+    temporaryPoint = [];
+    ptIndex = null;
   }
 });
 
 // register clear Canvas button function
-CLEAR_BTN.onclick = function () {
+clearBtn.onclick = function () {
   d3.select(".polyline").attr("d", "");
   d3.select(".points").selectAll("circle").remove();
   setInitialVariables();
 };
 // register undo button function
-UNDO_BTN.onclick = function () {
+undoBtn.onclick = function () {
   track.trackManager.undo();
   updateGeometry();
 };
 // register redo button function
-REDO_BTN.onclick = function () {
+redoBtn.onclick = function () {
   track.trackManager.redo();
   updateGeometry();
 };
@@ -125,8 +129,10 @@ document.onkeypress = function (e) {
 
 function setInitialVariables() {
   command(clearPoints);
-  command(setDrawingStatus, STATES.drawingStatus.drawing);
-  command(setPolylineType, STATES.polylineType.opened);
+  command(updateStatus, {
+    drawStatus: STATES.drawingStatus.drawing,
+    plineType: STATES.polylineType.opened,
+  });
 }
 
 function registerPointEvents() {
@@ -156,7 +162,7 @@ function registerPointEvents() {
       cursorPosition = STATES.cursorPosition.noPoint;
     });
   //call drag handler
-  DRAG_HANDLER(circles);
+  dragHandler(circles);
 }
 
 function ptHoverOn(circle) {
@@ -203,12 +209,13 @@ function updateCircles() {
 
 function updatePolyline() {
   if (drawingStatus()) {
-    let temporaryPoints = [];
-    SVG.on("mousemove", function (d) {
+    svgDOM.on("mousemove", function (d) {
       temporaryPoints = Array.from(points());
-      let placingPoint = [d.layerX, d.layerY];
-      temporaryPoints.push(placingPoint);
+      temporaryPoint = [d.layerX, d.layerY];
+      temporaryPoints.push(temporaryPoint);
       generatePathData(temporaryPoints);
+      temporaryPoints = [];
+      temporaryPoint = null;
     });
   } else {
     generatePathData(points());
@@ -216,7 +223,7 @@ function updatePolyline() {
 }
 
 function generatePathData(points) {
-  pathData = LINE_GENERATOR(points);
+  pathData = lineGenerator(points);
   if (polylineType()) {
     let closeString = ",Z";
     pathData = pathData.concat(closeString);
@@ -231,15 +238,19 @@ function setPath() {
 }
 
 function finishClosedPolyline() {
-  command(setPolylineType, STATES.polylineType.closed);
+  command(updateStatus, {
+    drawStatus: STATES.drawingStatus.notDrawing,
+    plineType: STATES.polylineType.closed,
+  });
   drawingFinished();
-  generatePathData(points());
 }
 
 function finishOpenedPolyline() {
-  command(setPolylineType, STATES.polylineType.opened);
+  command(updateStatus, {
+    drawStatus: STATES.drawingStatus.notDrawing,
+    plineType: STATES.polylineType.opened,
+  });
   drawingFinished();
-  generatePathData(points());
 }
 
 function getPtId(target) {
@@ -247,6 +258,6 @@ function getPtId(target) {
 }
 
 function drawingFinished() {
-  SVG.on("mousemove", null);
-  command(setDrawingStatus, STATES.drawingStatus.notDrawing);
+  svgDOM.on("mousemove", null);
+  generatePathData(points());
 }
