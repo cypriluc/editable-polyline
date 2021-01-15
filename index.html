@@ -13,21 +13,13 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="position-fixed clear-svg">
-      <div class="m-1 button-container" role="group">
-        <button
-          id="clear-svg"
-          type="button"
-          class="btn btn-block btn-outline-secondary btn-sm"
-        >
-          Clear Canvas
-        </button>
-      </div>
+    <div class="position-fixed clear-svg btn-toolbar">
       <div class="btn-group m-1 button-container" role="group">
         <button
           id="undo"
           type="button"
           class="btn btn-sm btn-outline-secondary"
+          disabled
         >
           Undo
         </button>
@@ -35,8 +27,18 @@
           id="redo"
           type="button"
           class="btn btn-sm btn-outline-secondary"
+          disabled
         >
           Redo
+        </button>
+      </div>
+      <div class="m-1 button-container" role="group">
+        <button
+          id="clear-svg"
+          type="button"
+          class="btn btn-block btn-outline-secondary btn-sm"
+        >
+          Clear Canvas
         </button>
       </div>
     </div>

@@ -184,6 +184,7 @@ function ptHoverOff(circle) {
 function updateGeometry() {
   updateCircles();
   updatePolyline();
+  checkButtons();
 }
 
 function updateCircles() {
@@ -260,4 +261,21 @@ function getPtId(target) {
 function drawingFinished() {
   svgDOM.on("mousemove", null);
   generatePathData(points());
+}
+
+function checkButtons() {
+  if (track.trackManager.getCurrentState().position === 0) {
+    undoBtn.disabled = true;
+  } else {
+    undoBtn.disabled = false;
+  }
+  // disable redo button when not possible to redo
+  if (
+    track.trackManager.getCurrentState().position >=
+    track.trackManager.getCurrentState().historyLength - 1
+  ) {
+    redoBtn.disabled = true;
+  } else {
+    redoBtn.disabled = false;
+  }
 }

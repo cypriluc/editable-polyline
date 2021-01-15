@@ -104,7 +104,7 @@ const createCommandManager = (target) => {
         history[position].undo();
         position -= 1;
         console.log("UNDO");
-        this.logCurrentState();
+        console.log(this.getCurrentState());
       }
     },
 
@@ -113,17 +113,17 @@ const createCommandManager = (target) => {
         position += 1;
         history[position].execute();
         console.log("REDO");
-        this.logCurrentState();
+        console.log(this.getCurrentState());
       }
     },
-    logCurrentState() {
-      console.log(
-        "position:" + position,
-        "history length:" + history.length,
-        "points:" + target.points.length,
-        "drawing:" + target.drawingStatus,
-        "polyline-type:" + target.polylineType
-      );
+    getCurrentState() {
+      return {
+        position: position,
+        historyLength: history.length,
+        points: target.points.length,
+        drawing: target.drawingStatus,
+        polylineType: target.polylineType,
+      };
     },
   };
 };
