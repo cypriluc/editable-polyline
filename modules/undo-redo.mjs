@@ -110,7 +110,8 @@ const createCommandManager = (target) => {
         console.log(
           "position:" + position,
           "history length:" + history.length,
-          "points:" + target.activeId.points.length,
+          "activeId:" + activeId,
+          "points:" + target.activeId.points,
           "drawing:" + target.activeId.drawingStatus,
           "polyline-type:" + target.activeId.polylineType
         );

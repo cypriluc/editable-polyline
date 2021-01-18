@@ -80,6 +80,7 @@ svg.on("click", function (d) {
 // register event - drag existing point
 dragHandler.on("drag", function (d) {
   if (!drawingStatus()) {
+    activeId = this.parentNode.parentNode.getAttribute("id");
     let circle = d3.select(this);
     ptIndex = getPtId(this);
     let newX;
@@ -112,6 +113,7 @@ dragHandler.on("drag", function (d) {
 
 dragHandler.on("end", function (d) {
   if (!drawingStatus()) {
+    activeId = this.parentNode.parentNode.getAttribute("id");
     command(movePt, activeId, { index: ptIndex, point: temporaryPoint });
     temporaryPoint = [];
     ptIndex = null;
@@ -225,6 +227,7 @@ function updateGeometry() {
 function updateCircles() {
   let circles = d3
     .select("#" + activeId)
+    .select(".points")
     .selectAll("circle")
     .data(points());
   circles.exit().remove();
@@ -273,7 +276,9 @@ function generatePathData(points) {
 }
 
 function setPath() {
-  d3.select(".polyline").attr("d", pathData);
+  d3.select("#" + activeId)
+    .select("path")
+    .attr("d", pathData);
 }
 
 function finishClosedPolyline() {
