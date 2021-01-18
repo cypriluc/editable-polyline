@@ -1,62 +1,74 @@
 import { STATES } from "./states.mjs";
 
 const createStateObject = () => {
-  return {
-    points: [],
-    drawingStatus: STATES.drawingStatus.drawing,
-    polylineType: STATES.polylineType.opened,
-  };
+  return {};
 };
 
 // commands
-const createAddPointCommand = (stateObject, newPoint) => {
-  const previousPoints = Array.from(stateObject.points);
+const createNewSvgGroupCommand = (stateObject, activeId) => {
+  const previousGroup = stateObject.activeId;
   return {
     execute() {
-      stateObject.points.push(newPoint);
+      stateObject.activeId = {
+        points: [],
+        drawingStatus: STATES.drawingStatus.drawing,
+        polylineType: STATES.polylineType.opened,
+      };
     },
     undo() {
-      stateObject.points = previousPoints;
+      stateObject.activeId = previousGroup;
     },
   };
 };
 
-const createMovePointCommand = (stateObject, ptObj) => {
-  const previousPoints = Array.from(stateObject.points);
+const createAddPointCommand = (stateObject, activeId, newPoint) => {
+  const previousPoints = Array.from(stateObject.activeId.points);
   return {
     execute() {
-      stateObject.points[ptObj.index] = ptObj.point;
+      stateObject.activeId.points.push(newPoint);
     },
     undo() {
-      stateObject.points = previousPoints;
+      stateObject.activeId.points = previousPoints;
     },
   };
 };
 
-const createSwitchStatusCommand = (stateObject, statusObj) => {
-  const previousDrawingStatus = stateObject.drawingStatus;
-  const previousPolylineType = stateObject.polylineType;
-
+const createMovePointCommand = (stateObject, activeId, ptObj) => {
+  const previousPoints = Array.from(stateObject.activeId.points);
   return {
     execute() {
-      stateObject.drawingStatus = statusObj.drawStatus;
-      stateObject.polylineType = statusObj.plineType;
+      stateObject.activeId.points[ptObj.index] = ptObj.point;
     },
     undo() {
-      stateObject.drawingStatus = previousDrawingStatus;
-      stateObject.polylineType = previousPolylineType;
+      stateObject.activeId.points = previousPoints;
     },
   };
 };
 
-const createClearPointsArrayCommand = (stateObject) => {
-  const previousPoints = Array.from(stateObject.points);
+const createSwitchStatusCommand = (stateObject, activeId, statusObj) => {
+  const previousDrawingStatus = stateObject.activeId.drawingStatus;
+  const previousPolylineType = stateObject.activeId.polylineType;
+
   return {
     execute() {
-      stateObject.points = [];
+      stateObject.activeId.drawingStatus = statusObj.drawStatus;
+      stateObject.activeId.polylineType = statusObj.plineType;
     },
     undo() {
-      stateObject.points = previousPoints;
+      stateObject.activeId.drawingStatus = previousDrawingStatus;
+      stateObject.activeId.polylineType = previousPolylineType;
+    },
+  };
+};
+
+const createClearCanvasCommand = (stateObject) => {
+  const previousState = stateObject;
+  return {
+    execute() {
+      stateObject = {};
+    },
+    undo() {
+      stateObject = previousState;
     },
   };
 };
@@ -65,12 +77,14 @@ const ADD = "ADD";
 const MOVE = "MOVE";
 const STATUS = "STATUS";
 const CLEAR = "CLEAR";
+const GROUP = "GROUP";
 
 const commands = {
+  [GROUP]: createNewSvgGroupCommand,
   [ADD]: createAddPointCommand,
   [MOVE]: createMovePointCommand,
   [STATUS]: createSwitchStatusCommand,
-  [CLEAR]: createClearPointsArrayCommand,
+  [CLEAR]: createClearCanvasCommand,
 };
 
 const createCommandManager = (target) => {
@@ -78,13 +92,17 @@ const createCommandManager = (target) => {
   let position = 0;
 
   return {
-    doCommand(commandType, argument) {
+    doCommand(commandType, activeId, argument) {
       if (position < history.length - 1) {
         history = history.slice(0, position + 1);
       }
 
       if (commands[commandType]) {
-        const concreteCommand = commands[commandType](target, argument);
+        const concreteCommand = commands[commandType](
+          target,
+          activeId,
+          argument
+        );
         history.push(concreteCommand);
         position += 1;
         concreteCommand.execute();
@@ -92,9 +110,9 @@ const createCommandManager = (target) => {
         console.log(
           "position:" + position,
           "history length:" + history.length,
-          "points:" + target.points.length,
-          "drawing:" + target.drawingStatus,
-          "polyline-type:" + target.polylineType
+          "points:" + target.activeId.points.length,
+          "drawing:" + target.activeId.drawingStatus,
+          "polyline-type:" + target.activeId.polylineType
         );
       }
     },
@@ -120,9 +138,10 @@ const createCommandManager = (target) => {
       return {
         position: position,
         historyLength: history.length,
-        points: target.points.length,
-        drawing: target.drawingStatus,
-        polylineType: target.polylineType,
+        activeId: target,
+        points: target.activeId.points.length,
+        drawing: target.activeId.drawingStatus,
+        polylineType: target.activeId.polylineType,
       };
     },
   };
@@ -136,11 +155,12 @@ export {
   createAddPointCommand,
   createMovePointCommand,
   createSwitchStatusCommand,
-  createClearPointsArrayCommand,
+  createClearCanvasCommand,
   commands,
   createCommandManager,
   trackStateObject,
   trackManager,
+  GROUP,
   ADD,
   MOVE,
   STATUS,
