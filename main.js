@@ -123,7 +123,7 @@ dragHandler.on("end", function (d) {
 // register clear Canvas button function
 clearBtn.onclick = function () {
   d3.select("svg").selectAll("g").remove();
-  setInitialVariables();
+  command(clearPoints);
 };
 // register undo button function
 undoBtn.onclick = function () {
@@ -162,14 +162,6 @@ function generateId() {
     newId += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return newId;
-}
-
-function setInitialVariables() {
-  command(clearPoints);
-  command(updateStatus, activeId, {
-    drawStatus: STATES.drawingStatus.notDrawing,
-    plineType: STATES.polylineType.opened,
-  });
 }
 
 function registerPointEvents() {

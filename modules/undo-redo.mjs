@@ -65,7 +65,9 @@ const createClearCanvasCommand = (stateObject) => {
   const previousState = stateObject;
   return {
     execute() {
-      stateObject = {};
+      for (let g in stateObject) {
+        delete stateObject[g];
+      }
     },
     undo() {
       stateObject = previousState;
@@ -124,7 +126,8 @@ const createCommandManager = (target) => {
         history[position].undo();
         position -= 1;
         console.log("UNDO");
-        console.log(this.getCurrentState(activeId));
+        console.log(target);
+        console.log(this.getCurrentState());
       }
     },
 
@@ -133,17 +136,14 @@ const createCommandManager = (target) => {
         position += 1;
         history[position].execute();
         console.log("REDO");
-        console.log(this.getCurrentState(activeId));
+        console.log(target);
+        console.log(this.getCurrentState());
       }
     },
-    getCurrentState(activeId) {
+    getCurrentState() {
       return {
         position: position,
         historyLength: history.length,
-        activeId: target,
-        /*         points: target[activeId].points.length,
-        drawing: target[activeId].drawingStatus,
-        polylineType: target[activeId].polylineType, */
       };
     },
   };
