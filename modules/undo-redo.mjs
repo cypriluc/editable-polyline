@@ -6,57 +6,57 @@ const createStateObject = () => {
 
 // commands
 const createNewSvgGroupCommand = (stateObject, activeId) => {
-  const previousGroup = stateObject.activeId;
+  const previousGroup = stateObject[activeId];
   return {
     execute() {
-      stateObject.activeId = {
+      stateObject[activeId] = {
         points: [],
         drawingStatus: STATES.drawingStatus.drawing,
         polylineType: STATES.polylineType.opened,
       };
     },
     undo() {
-      stateObject.activeId = previousGroup;
+      stateObject[activeId] = previousGroup;
     },
   };
 };
 
 const createAddPointCommand = (stateObject, activeId, newPoint) => {
-  const previousPoints = Array.from(stateObject.activeId.points);
+  const previousPoints = Array.from(stateObject[activeId].points);
   return {
     execute() {
-      stateObject.activeId.points.push(newPoint);
+      stateObject[activeId].points.push(newPoint);
     },
     undo() {
-      stateObject.activeId.points = previousPoints;
+      stateObject[activeId].points = previousPoints;
     },
   };
 };
 
 const createMovePointCommand = (stateObject, activeId, ptObj) => {
-  const previousPoints = Array.from(stateObject.activeId.points);
+  const previousPoints = Array.from(stateObject[activeId].points);
   return {
     execute() {
-      stateObject.activeId.points[ptObj.index] = ptObj.point;
+      stateObject[activeId].points[ptObj.index] = ptObj.point;
     },
     undo() {
-      stateObject.activeId.points = previousPoints;
+      stateObject[activeId].points = previousPoints;
     },
   };
 };
 
 const createSwitchStatusCommand = (stateObject, activeId, statusObj) => {
-  const previousDrawingStatus = stateObject.activeId.drawingStatus;
-  const previousPolylineType = stateObject.activeId.polylineType;
+  const previousDrawingStatus = stateObject[activeId].drawingStatus;
+  const previousPolylineType = stateObject[activeId].polylineType;
 
   return {
     execute() {
-      stateObject.activeId.drawingStatus = statusObj.drawStatus;
-      stateObject.activeId.polylineType = statusObj.plineType;
+      stateObject[activeId].drawingStatus = statusObj.drawStatus;
+      stateObject[activeId].polylineType = statusObj.plineType;
     },
     undo() {
-      stateObject.activeId.drawingStatus = previousDrawingStatus;
-      stateObject.activeId.polylineType = previousPolylineType;
+      stateObject[activeId].drawingStatus = previousDrawingStatus;
+      stateObject[activeId].polylineType = previousPolylineType;
     },
   };
 };
@@ -107,13 +107,14 @@ const createCommandManager = (target) => {
         position += 1;
         concreteCommand.execute();
         console.log(commandType);
+        console.log(target);
         console.log(
           "position:" + position,
           "history length:" + history.length,
           "activeId:" + activeId,
-          "points:" + target.activeId.points,
-          "drawing:" + target.activeId.drawingStatus,
-          "polyline-type:" + target.activeId.polylineType
+          "points:" + target[activeId].points,
+          "drawing:" + target[activeId].drawingStatus,
+          "polyline-type:" + target[activeId].polylineType
         );
       }
     },
@@ -123,7 +124,7 @@ const createCommandManager = (target) => {
         history[position].undo();
         position -= 1;
         console.log("UNDO");
-        console.log(this.getCurrentState());
+        console.log(this.getCurrentState(activeId));
       }
     },
 
@@ -132,17 +133,17 @@ const createCommandManager = (target) => {
         position += 1;
         history[position].execute();
         console.log("REDO");
-        console.log(this.getCurrentState());
+        console.log(this.getCurrentState(activeId));
       }
     },
-    getCurrentState() {
+    getCurrentState(activeId) {
       return {
         position: position,
         historyLength: history.length,
         activeId: target,
-        points: target.activeId.points.length,
-        drawing: target.activeId.drawingStatus,
-        polylineType: target.activeId.polylineType,
+        /*         points: target[activeId].points.length,
+        drawing: target[activeId].drawingStatus,
+        polylineType: target[activeId].polylineType, */
       };
     },
   };

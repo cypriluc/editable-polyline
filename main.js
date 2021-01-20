@@ -24,22 +24,22 @@ const createGroup = track.GROUP;
 
 // return values from undo-redo.mjs
 const points = () => {
-  if (typeof track.trackStateObject.activeId != "undefined") {
-    return track.trackStateObject.activeId.points;
+  if (typeof track.trackStateObject[activeId] != "undefined") {
+    return track.trackStateObject[activeId].points;
   } else {
     return [];
   }
 };
 const drawingStatus = () => {
-  if (typeof track.trackStateObject.activeId != "undefined") {
-    return track.trackStateObject.activeId.drawingStatus;
+  if (typeof track.trackStateObject[activeId] != "undefined") {
+    return track.trackStateObject[activeId].drawingStatus;
   } else {
     return STATES.drawingStatus.notDrawing;
   }
 };
 const polylineType = () => {
-  if (typeof track.trackStateObject.activeId != "undefined") {
-    return track.trackStateObject.activeId.polylineType;
+  if (typeof track.trackStateObject[activeId] != "undefined") {
+    return track.trackStateObject[activeId].polylineType;
   } else {
     return STATES.polylineType.opened;
   }
