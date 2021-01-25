@@ -2,58 +2,57 @@ import { STATES } from "./modules/states.mjs";
 import * as track from "./modules/undo-redo.mjs";
 
 // global constants
-const SVG_WIDTH = 700;
-const SVG_HEIGHT = 450;
-const POINT_RADIUS = 4;
-const POINT_RADIUS_HOVER = 8;
+const SVG_WIDTH = 700,
+  SVG_HEIGHT = 450,
+  POINT_RADIUS = 4,
+  POINT_RADIUS_HOVER = 8;
 // d3 objects / methods
-const lineGenerator = d3.line();
-const svg = d3.select("svg");
-const dragHandler = d3.drag();
+const lineGenerator = d3.line(),
+  svg = d3.select("svg"),
+  dragHandler = d3.drag();
 // buttons in DOM
-const clearBtn = document.getElementById("clear-svg");
-const undoBtn = document.getElementById("undo");
-const redoBtn = document.getElementById("redo");
+const clearBtn = document.getElementById("clear-svg"),
+  undoBtn = document.getElementById("undo"),
+  redoBtn = document.getElementById("redo");
 // undo-redo module most used
-const command = track.trackManager.doCommand;
-const addPt = track.ADD;
-const movePt = track.MOVE;
-const updateStatus = track.STATUS;
-const clearPoints = track.CLEAR;
-const createGroup = track.GROUP;
-const setActive = track.ACTIVE;
-
+const command = track.trackManager.doCommand,
+  addPt = track.ADD,
+  movePt = track.MOVE,
+  updateStatus = track.STATUS,
+  clearPoints = track.CLEAR,
+  createGroup = track.GROUP,
+  setActive = track.ACTIVE;
+// variables used in more functions
+let pathData,
+  cursorPosition = STATES.cursorPosition.noPoint,
+  temporaryPoint,
+  ptIndex,
+  temporaryPoints = [];
 // return values from undo-redo.mjs
 const activeId = () => {
-  return track.trackStateObject.activeId;
-};
-const points = () => {
-  if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-    return track.trackStateObject.data[activeId()].points;
-  } else {
-    return [];
-  }
-};
-const drawingStatus = () => {
-  if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-    return track.trackStateObject.data[activeId()].drawingStatus;
-  } else {
-    return STATES.drawingStatus.notDrawing;
-  }
-};
-const polylineType = () => {
-  if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-    return track.trackStateObject.data[activeId()].polylineType;
-  } else {
-    return STATES.polylineType.opened;
-  }
-};
-
-let pathData;
-let cursorPosition = STATES.cursorPosition.noPoint;
-let temporaryPoint;
-let ptIndex;
-let temporaryPoints = [];
+    return track.trackStateObject.activeId;
+  },
+  points = () => {
+    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
+      return track.trackStateObject.data[activeId()].points;
+    } else {
+      return [];
+    }
+  },
+  drawingStatus = () => {
+    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
+      return track.trackStateObject.data[activeId()].drawingStatus;
+    } else {
+      return STATES.drawingStatus.notDrawing;
+    }
+  },
+  polylineType = () => {
+    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
+      return track.trackStateObject.data[activeId()].polylineType;
+    } else {
+      return STATES.polylineType.opened;
+    }
+  };
 
 // set svg size
 svg.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
@@ -95,24 +94,9 @@ dragHandler.on("drag", function (d) {
   if (!drawingStatus()) {
     let circle = d3.select(this);
     ptIndex = getPtId(this);
-    let newX;
-    let newY;
 
-    if (d.x < SVG_WIDTH - POINT_RADIUS && d.x > POINT_RADIUS) {
-      newX = d.x;
-    } else if (d.x >= SVG_WIDTH - POINT_RADIUS) {
-      newX = SVG_WIDTH - POINT_RADIUS;
-    } else {
-      newX = POINT_RADIUS;
-    }
-
-    if (d.y < SVG_HEIGHT - POINT_RADIUS && d.y > POINT_RADIUS) {
-      newY = d.y;
-    } else if (d.y >= SVG_HEIGHT - POINT_RADIUS) {
-      newY = SVG_HEIGHT - POINT_RADIUS;
-    } else {
-      newY = POINT_RADIUS;
-    }
+    let newX = Math.max(POINT_RADIUS, Math.min(SVG_WIDTH - POINT_RADIUS, d.x));
+    let newY = Math.max(POINT_RADIUS, Math.min(SVG_HEIGHT - POINT_RADIUS, d.y));
 
     circle.attr("cx", newX).attr("cy", newY);
     temporaryPoints = Array.from(points());
