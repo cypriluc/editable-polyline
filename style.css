@@ -9,13 +9,22 @@ svg {
 }
 path {
   fill: none;
-  stroke: purple;
+  stroke: rgb(54, 54, 54);
   stroke-width: 1px;
 }
+
 circle {
-  stroke: purple;
+  stroke: rgb(54, 54, 54);
   stroke-width: 1px;
 }
+
+.active path {
+  stroke: orchid;
+}
+.active circle {
+  stroke: orchid;
+}
+
 .clear-svg {
   top: 10px;
   right: 10px;

@@ -2,61 +2,101 @@ import { STATES } from "./states.mjs";
 
 const createStateObject = () => {
   return {
-    points: [],
-    drawingStatus: STATES.drawingStatus.drawing,
-    polylineType: STATES.polylineType.opened,
+    activeId: null,
+    data: {},
   };
 };
 
 // commands
-const createAddPointCommand = (stateObject, newPoint) => {
-  const previousPoints = Array.from(stateObject.points);
+const createSetActiveIdCommand = (stateObject, id) => {
+  const previousActiveId = stateObject.activeId;
   return {
     execute() {
-      stateObject.points.push(newPoint);
+      stateObject.activeId = id;
     },
     undo() {
-      stateObject.points = previousPoints;
+      stateObject.activeId = previousActiveId;
+    },
+  };
+};
+
+const createNewSvgGroupCommand = (stateObject) => {
+  const previousGroup = stateObject.data[stateObject.activeId];
+  return {
+    execute() {
+      stateObject.data[stateObject.activeId] = {
+        points: [],
+        drawingStatus: STATES.drawingStatus.drawing,
+        polylineType: STATES.polylineType.opened,
+      };
+    },
+    undo() {
+      stateObject.data[stateObject.activeId] = previousGroup;
+    },
+  };
+};
+
+const createAddPointCommand = (stateObject, newPoint) => {
+  const previousPoints = Array.from(
+    stateObject.data[stateObject.activeId].points
+  );
+  return {
+    execute() {
+      stateObject.data[stateObject.activeId].points.push(newPoint);
+    },
+    undo() {
+      stateObject.data[stateObject.activeId].points = previousPoints;
     },
   };
 };
 
 const createMovePointCommand = (stateObject, ptObj) => {
-  const previousPoints = Array.from(stateObject.points);
+  const previousPoints = Array.from(
+    stateObject.data[stateObject.activeId].points
+  );
   return {
     execute() {
-      stateObject.points[ptObj.index] = ptObj.point;
+      stateObject.data[stateObject.activeId].points[ptObj.index] = ptObj.point;
     },
     undo() {
-      stateObject.points = previousPoints;
+      stateObject.data[stateObject.activeId].points = previousPoints;
     },
   };
 };
 
 const createSwitchStatusCommand = (stateObject, statusObj) => {
-  const previousDrawingStatus = stateObject.drawingStatus;
-  const previousPolylineType = stateObject.polylineType;
+  const previousDrawingStatus =
+    stateObject.data[stateObject.activeId].drawingStatus;
+  const previousPolylineType =
+    stateObject.data[stateObject.activeId].polylineType;
 
   return {
     execute() {
-      stateObject.drawingStatus = statusObj.drawStatus;
-      stateObject.polylineType = statusObj.plineType;
+      stateObject.data[stateObject.activeId].drawingStatus =
+        statusObj.drawStatus;
+      stateObject.data[stateObject.activeId].polylineType = statusObj.plineType;
     },
     undo() {
-      stateObject.drawingStatus = previousDrawingStatus;
-      stateObject.polylineType = previousPolylineType;
+      stateObject.data[
+        stateObject.activeId
+      ].drawingStatus = previousDrawingStatus;
+      stateObject.data[
+        stateObject.activeId
+      ].polylineType = previousPolylineType;
     },
   };
 };
 
-const createClearPointsArrayCommand = (stateObject) => {
-  const previousPoints = Array.from(stateObject.points);
+const createClearCanvasCommand = (stateObject) => {
+  const previousState = stateObject.data;
   return {
     execute() {
-      stateObject.points = [];
+      for (let g in stateObject.data) {
+        delete stateObject.data[g];
+      }
     },
     undo() {
-      stateObject.points = previousPoints;
+      stateObject.data = previousState;
     },
   };
 };
@@ -65,12 +105,16 @@ const ADD = "ADD";
 const MOVE = "MOVE";
 const STATUS = "STATUS";
 const CLEAR = "CLEAR";
+const GROUP = "GROUP";
+const ACTIVE = "ACTIVE";
 
 const commands = {
+  [GROUP]: createNewSvgGroupCommand,
   [ADD]: createAddPointCommand,
   [MOVE]: createMovePointCommand,
   [STATUS]: createSwitchStatusCommand,
-  [CLEAR]: createClearPointsArrayCommand,
+  [CLEAR]: createClearCanvasCommand,
+  [ACTIVE]: createSetActiveIdCommand,
 };
 
 const createCommandManager = (target) => {
@@ -89,13 +133,8 @@ const createCommandManager = (target) => {
         position += 1;
         concreteCommand.execute();
         console.log(commandType);
-        console.log(
-          "position:" + position,
-          "history length:" + history.length,
-          "points:" + target.points.length,
-          "drawing:" + target.drawingStatus,
-          "polyline-type:" + target.polylineType
-        );
+        console.log(target);
+        console.log("position:" + position, "history length:" + history.length);
       }
     },
 
@@ -104,6 +143,7 @@ const createCommandManager = (target) => {
         history[position].undo();
         position -= 1;
         console.log("UNDO");
+        console.log(target);
         console.log(this.getCurrentState());
       }
     },
@@ -113,6 +153,7 @@ const createCommandManager = (target) => {
         position += 1;
         history[position].execute();
         console.log("REDO");
+        console.log(target);
         console.log(this.getCurrentState());
       }
     },
@@ -120,9 +161,6 @@ const createCommandManager = (target) => {
       return {
         position: position,
         historyLength: history.length,
-        points: target.points.length,
-        drawing: target.drawingStatus,
-        polylineType: target.polylineType,
       };
     },
   };
@@ -136,13 +174,16 @@ export {
   createAddPointCommand,
   createMovePointCommand,
   createSwitchStatusCommand,
-  createClearPointsArrayCommand,
+  createClearCanvasCommand,
+  createSetActiveIdCommand,
   commands,
   createCommandManager,
   trackStateObject,
   trackManager,
+  GROUP,
   ADD,
   MOVE,
   STATUS,
   CLEAR,
+  ACTIVE,
 };
