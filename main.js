@@ -84,7 +84,10 @@ svg.on("click", function (d) {
 dragHandler.on("start", function (d) {
   if (!drawingStatus()) {
     let newActiveId = this.parentNode.parentNode.getAttribute("id");
-    command(setActive, newActiveId);
+    if (activeId() != newActiveId) {
+      command(setActive, newActiveId);
+      colorActive();
+    }
   }
 });
 
@@ -130,28 +133,32 @@ dragHandler.on("end", function (d) {
 
 // register clear Canvas button function
 clearBtn.onclick = function () {
-  d3.select("svg").selectAll("g").remove();
+  svg.selectAll("g").remove();
   command(clearPoints);
 };
 // register undo button function
 undoBtn.onclick = function () {
   track.trackManager.undo();
   updateGeometry();
+  colorActive();
 };
 // register redo button function
 redoBtn.onclick = function () {
   track.trackManager.redo();
   updateGeometry();
+  colorActive();
 };
 // register undo / redo on keypress
 document.onkeypress = function (e) {
   if (e.ctrlKey && e.code === "KeyY") {
     track.trackManager.undo();
     updateGeometry();
+    colorActive();
   }
   if (e.ctrlKey && e.code === "KeyZ") {
     track.trackManager.redo();
     updateGeometry();
+    colorActive();
   }
 };
 
@@ -162,6 +169,7 @@ function createSvgGroup() {
   let newGroup = svg.append("g").attr("id", activeId());
   newGroup.append("path").classed("polyline", true);
   newGroup.append("g").classed("points", true);
+  colorActive();
 }
 
 function generateId() {
@@ -208,7 +216,7 @@ function ptHoverOn(circle) {
     .transition()
     .duration(100)
     .attr("r", POINT_RADIUS_HOVER)
-    .attr("fill", "purple");
+    .attr("fill", "orchid");
 }
 
 function ptHoverOff(circle) {
@@ -322,4 +330,10 @@ function checkButtons() {
   } else {
     redoBtn.disabled = false;
   }
+}
+
+function colorActive() {
+  let activeG = svg.select("#" + activeId());
+  svg.selectAll("g").classed("active", false);
+  activeG.classed("active", true);
 }
