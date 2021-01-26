@@ -4,9 +4,8 @@ const width = SVG_SIZE.width,
   height = SVG_SIZE.height,
   resolution = GRID_RESOLUTION;
 
-const svg = d3.select("svg");
+const grid = d3.select("#grid");
 
-const grid = svg.append("g").attr("id", "grid");
 grid
   .selectAll(".vertical")
   .data(d3.range(1, width / resolution))

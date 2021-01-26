@@ -4,7 +4,7 @@ import {
   STATES,
   GRID_RESOLUTION,
 } from "./modules/constants.mjs";
-import * as track from "./modules/undo-redo.mjs";
+import * as command from "./modules/commands.mjs";
 import * as grid from "./modules/grid.mjs";
 
 // global constants
@@ -15,46 +15,48 @@ const SVG_WIDTH = SVG_SIZE.width,
 // d3 objects / methods
 const lineGenerator = d3.line(),
   svg = d3.select("svg"),
+  svgGeometry = d3.select("#geometry"),
   dragHandler = d3.drag();
 // buttons in DOM
 const clearBtn = document.getElementById("clear-svg"),
   undoBtn = document.getElementById("undo"),
   redoBtn = document.getElementById("redo");
 // undo-redo module most used
-const command = track.trackManager.doCommand,
-  addPt = track.ADD,
-  movePt = track.MOVE,
-  updateStatus = track.STATUS,
-  clearPoints = track.CLEAR,
-  createGroup = track.GROUP,
-  setActive = track.ACTIVE,
-  trackData = track.trackStateObject.data;
+const doCommand = command.commandManager.doCommand,
+  addPt = command.ADD,
+  movePt = command.MOVE,
+  updateStatus = command.STATUS,
+  clearPoints = command.CLEAR,
+  createGroup = command.GROUP,
+  setActive = command.ACTIVE,
+  commandData = command.stateObject.data;
 // variables used in more functions
 let cursorPosition = STATES.cursorPosition.noPoint,
   temporaryPoint,
   activePtIndex,
-  temporaryPoints = [];
+  temporaryPoints = [],
+  snap = true;
 // return values from undo-redo.mjs
 const activeId = () => {
-    return track.trackStateObject.activeId;
+    return command.stateObject.activeId;
   },
   points = () => {
-    if (typeof trackData[activeId()] != "undefined") {
-      return trackData[activeId()].points;
+    if (typeof commandData[activeId()] != "undefined") {
+      return commandData[activeId()].points;
     } else {
       return [];
     }
   },
   drawingStatus = () => {
-    if (typeof trackData[activeId()] != "undefined") {
-      return trackData[activeId()].drawingStatus;
+    if (typeof commandData[activeId()] != "undefined") {
+      return commandData[activeId()].drawingStatus;
     } else {
       return STATES.drawingStatus.notDrawing;
     }
   },
   polylineType = () => {
-    if (typeof trackData[activeId()] != "undefined") {
-      return trackData[activeId()].polylineType;
+    if (typeof commandData[activeId()] != "undefined") {
+      return commandData[activeId()].polylineType;
     } else {
       return STATES.polylineType.opened;
     }
@@ -64,11 +66,16 @@ const activeId = () => {
 svg.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
 
 // register event - add new point on click in svg
-svg.on("click", function (d) {
+svg.on("click", newPoint);
+dragHandler.on("start", started);
+dragHandler.on("drag", dragged);
+dragHandler.on("end", dragend);
+
+function newPoint(d) {
   if (drawingStatus()) {
     if (cursorPosition === 0) {
       let newPoint = [d.layerX, d.layerY];
-      command(addPt, newPoint);
+      doCommand(addPt, newPoint);
       updateGeometry();
     }
     if (cursorPosition === 1) {
@@ -80,23 +87,22 @@ svg.on("click", function (d) {
   } else {
     createSvgGroup();
     let newPoint = [d.layerX, d.layerY];
-    command(addPt, newPoint);
+    doCommand(addPt, newPoint);
     updateGeometry();
   }
-});
+}
 
-// register event - drag existing point
-dragHandler.on("start", function (d) {
+function started(d) {
   if (!drawingStatus()) {
     let newActiveId = this.parentNode.parentNode.getAttribute("id");
     if (activeId() != newActiveId) {
-      command(setActive, newActiveId);
+      doCommand(setActive, newActiveId);
       colorActive();
     }
   }
-});
+}
 
-dragHandler.on("drag", function (d) {
+function dragged(d) {
   if (!drawingStatus()) {
     let circle = d3.select(this);
     activePtIndex = getPtId(this);
@@ -111,42 +117,42 @@ dragHandler.on("drag", function (d) {
     generatePathData(temporaryPoints);
     temporaryPoints = [];
   }
-});
+}
 
-dragHandler.on("end", function (d) {
+function dragend(d) {
   if (!drawingStatus()) {
-    command(movePt, { index: activePtIndex, point: temporaryPoint });
+    doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
     temporaryPoint = [];
     activePtIndex = null;
   }
-});
+}
 
 // register clear Canvas button function
 clearBtn.onclick = function () {
-  svg.selectAll("g").remove();
-  command(clearPoints);
+  svgGeometry.selectAll("g").remove();
+  doCommand(clearPoints);
 };
 // register undo button function
 undoBtn.onclick = function () {
-  track.trackManager.undo();
+  command.commandManager.undo();
   updateGeometry();
   colorActive();
 };
 // register redo button function
 redoBtn.onclick = function () {
-  track.trackManager.redo();
+  command.commandManager.redo();
   updateGeometry();
   colorActive();
 };
 // register undo / redo on keypress
 document.onkeypress = function (e) {
   if (e.ctrlKey && e.code === "KeyY") {
-    track.trackManager.undo();
+    command.commandManager.undo();
     updateGeometry();
     colorActive();
   }
   if (e.ctrlKey && e.code === "KeyZ") {
-    track.trackManager.redo();
+    command.commandManager.redo();
     updateGeometry();
     colorActive();
   }
@@ -154,9 +160,9 @@ document.onkeypress = function (e) {
 
 function createSvgGroup() {
   let newId = generateId();
-  command(setActive, newId);
-  command(createGroup);
-  let newGroup = svg.append("g").attr("id", activeId());
+  doCommand(setActive, newId);
+  doCommand(createGroup);
+  let newGroup = svgGeometry.append("g").attr("id", activeId());
   newGroup.append("path").classed("polyline", true);
   newGroup.append("g").classed("points", true);
   colorActive();
@@ -281,7 +287,7 @@ function setPath(data) {
 }
 
 function finishClosedPolyline() {
-  command(updateStatus, {
+  doCommand(updateStatus, {
     drawStatus: STATES.drawingStatus.notDrawing,
     plineType: STATES.polylineType.closed,
   });
@@ -289,7 +295,7 @@ function finishClosedPolyline() {
 }
 
 function finishOpenedPolyline() {
-  command(updateStatus, {
+  doCommand(updateStatus, {
     drawStatus: STATES.drawingStatus.notDrawing,
     plineType: STATES.polylineType.opened,
   });
@@ -306,15 +312,15 @@ function drawingFinished() {
 }
 
 function checkButtons() {
-  if (track.trackManager.getCurrentState().position === 0) {
+  if (command.commandManager.getCurrentState().position === 0) {
     undoBtn.disabled = true;
   } else {
     undoBtn.disabled = false;
   }
   // disable redo button when not possible to redo
   if (
-    track.trackManager.getCurrentState().position >=
-    track.trackManager.getCurrentState().historyLength - 1
+    command.commandManager.getCurrentState().position >=
+    command.commandManager.getCurrentState().historyLength - 1
   ) {
     redoBtn.disabled = true;
   } else {
@@ -323,7 +329,7 @@ function checkButtons() {
 }
 
 function colorActive() {
-  let activeG = svg.select("#" + activeId());
-  svg.selectAll("g").classed("active", false);
+  let activeG = svgGeometry.select("#" + activeId());
+  svgGeometry.selectAll("g").classed("active", false);
   activeG.classed("active", true);
 }
