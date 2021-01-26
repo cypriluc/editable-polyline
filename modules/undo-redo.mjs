@@ -1,4 +1,4 @@
-import { STATES } from "./states.mjs";
+import { STATES } from "./constants.mjs";
 
 const createStateObject = () => {
   return {

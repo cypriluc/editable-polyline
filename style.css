@@ -18,6 +18,12 @@ circle {
   stroke-width: 1px;
 }
 
+line {
+  stroke: rgb(236, 236, 236);
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+
 .active path {
   stroke: orchid;
 }

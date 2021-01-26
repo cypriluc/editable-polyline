@@ -1,11 +1,17 @@
-import { STATES } from "./modules/states.mjs";
+import {
+  SVG_SIZE,
+  CIRCLE_RADIUS,
+  STATES,
+  GRID_RESOLUTION,
+} from "./modules/constants.mjs";
 import * as track from "./modules/undo-redo.mjs";
+import * as grid from "./modules/grid.mjs";
 
 // global constants
-const SVG_WIDTH = 700,
-  SVG_HEIGHT = 450,
-  POINT_RADIUS = 4,
-  POINT_RADIUS_HOVER = 8;
+const SVG_WIDTH = SVG_SIZE.width,
+  SVG_HEIGHT = SVG_SIZE.height,
+  POINT_RADIUS = CIRCLE_RADIUS.basic,
+  POINT_RADIUS_HOVER = CIRCLE_RADIUS.hover;
 // d3 objects / methods
 const lineGenerator = d3.line(),
   svg = d3.select("svg"),
@@ -21,34 +27,34 @@ const command = track.trackManager.doCommand,
   updateStatus = track.STATUS,
   clearPoints = track.CLEAR,
   createGroup = track.GROUP,
-  setActive = track.ACTIVE;
+  setActive = track.ACTIVE,
+  trackData = track.trackStateObject.data;
 // variables used in more functions
-let pathData,
-  cursorPosition = STATES.cursorPosition.noPoint,
+let cursorPosition = STATES.cursorPosition.noPoint,
   temporaryPoint,
-  ptIndex,
+  activePtIndex,
   temporaryPoints = [];
 // return values from undo-redo.mjs
 const activeId = () => {
     return track.trackStateObject.activeId;
   },
   points = () => {
-    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-      return track.trackStateObject.data[activeId()].points;
+    if (typeof trackData[activeId()] != "undefined") {
+      return trackData[activeId()].points;
     } else {
       return [];
     }
   },
   drawingStatus = () => {
-    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-      return track.trackStateObject.data[activeId()].drawingStatus;
+    if (typeof trackData[activeId()] != "undefined") {
+      return trackData[activeId()].drawingStatus;
     } else {
       return STATES.drawingStatus.notDrawing;
     }
   },
   polylineType = () => {
-    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-      return track.trackStateObject.data[activeId()].polylineType;
+    if (typeof trackData[activeId()] != "undefined") {
+      return trackData[activeId()].polylineType;
     } else {
       return STATES.polylineType.opened;
     }
@@ -93,7 +99,7 @@ dragHandler.on("start", function (d) {
 dragHandler.on("drag", function (d) {
   if (!drawingStatus()) {
     let circle = d3.select(this);
-    ptIndex = getPtId(this);
+    activePtIndex = getPtId(this);
 
     let newX = Math.max(POINT_RADIUS, Math.min(SVG_WIDTH - POINT_RADIUS, d.x));
     let newY = Math.max(POINT_RADIUS, Math.min(SVG_HEIGHT - POINT_RADIUS, d.y));
@@ -101,7 +107,7 @@ dragHandler.on("drag", function (d) {
     circle.attr("cx", newX).attr("cy", newY);
     temporaryPoints = Array.from(points());
     temporaryPoint = [newX, newY];
-    temporaryPoints[ptIndex] = temporaryPoint;
+    temporaryPoints[activePtIndex] = temporaryPoint;
     generatePathData(temporaryPoints);
     temporaryPoints = [];
   }
@@ -109,9 +115,9 @@ dragHandler.on("drag", function (d) {
 
 dragHandler.on("end", function (d) {
   if (!drawingStatus()) {
-    command(movePt, { index: ptIndex, point: temporaryPoint });
+    command(movePt, { index: activePtIndex, point: temporaryPoint });
     temporaryPoint = [];
-    ptIndex = null;
+    activePtIndex = null;
   }
 });
 
@@ -171,12 +177,12 @@ function registerPointEvents() {
   circles
     .on("mouseover", function () {
       let circle = d3.select(this);
-      let ptIndex = getPtId(this);
+      let circleIndex = getPtId(this);
       if (drawingStatus()) {
-        if (ptIndex === 0) {
+        if (circleIndex === 0) {
           cursorPosition = STATES.cursorPosition.firstPoint;
           ptHoverOn(circle);
-        } else if (ptIndex === points().length - 1) {
+        } else if (circleIndex === points().length - 1) {
           cursorPosition = STATES.cursorPosition.lastPoint;
           ptHoverOn(circle);
         } else {
@@ -258,20 +264,20 @@ function updatePolyline() {
 }
 
 function generatePathData(points) {
-  pathData = lineGenerator(points);
+  let pathData = lineGenerator(points);
   if (polylineType()) {
     let closeString = ",Z";
     pathData = pathData.concat(closeString);
-    setPath();
+    setPath(pathData);
   } else {
-    setPath();
+    setPath(pathData);
   }
 }
 
-function setPath() {
+function setPath(data) {
   d3.select("#" + activeId())
     .select("path")
-    .attr("d", pathData);
+    .attr("d", data);
 }
 
 function finishClosedPolyline() {

@@ -1,4 +1,14 @@
-const STATES = {
+export const SVG_SIZE = {
+  width: 700,
+  height: 450,
+};
+
+export const CIRCLE_RADIUS = {
+  basic: 4,
+  hover: 8,
+};
+
+export const STATES = {
   cursorPosition: {
     noPoint: 0,
     firstPoint: 1,
@@ -17,4 +27,4 @@ const STATES = {
   },
 };
 
-export { STATES };
+export const GRID_RESOLUTION = 10;
