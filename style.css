@@ -18,6 +18,12 @@ circle {
   stroke-width: 1px;
 }
 
+line {
+  stroke: rgb(236, 236, 236);
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+
 .active path {
   stroke: orchid;
 }
@@ -29,9 +35,7 @@ circle {
   top: 10px;
   right: 10px;
 }
-.button-container {
-  width: 100px;
-}
-.btn-block {
-  width: 100%;
+
+.hide-grid {
+  visibility: hidden;
 }

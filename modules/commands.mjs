@@ -1,4 +1,4 @@
-import { STATES } from "./states.mjs";
+import { STATES } from "./constants.mjs";
 
 const createStateObject = () => {
   return {
@@ -166,8 +166,8 @@ const createCommandManager = (target) => {
   };
 };
 
-const trackStateObject = createStateObject();
-const trackManager = createCommandManager(trackStateObject);
+const stateObject = createStateObject();
+const commandManager = createCommandManager(stateObject);
 
 export {
   createStateObject,
@@ -178,8 +178,8 @@ export {
   createSetActiveIdCommand,
   commands,
   createCommandManager,
-  trackStateObject,
-  trackManager,
+  stateObject,
+  commandManager,
   GROUP,
   ADD,
   MOVE,

@@ -1,69 +1,117 @@
-import { STATES } from "./modules/states.mjs";
-import * as track from "./modules/undo-redo.mjs";
+import {
+  SVG_SIZE,
+  CIRCLE_RADIUS,
+  STATES,
+  GRID_RESOLUTION,
+} from "./modules/constants.mjs";
+import * as command from "./modules/commands.mjs";
+import * as grid from "./modules/grid.mjs";
 
 // global constants
-const SVG_WIDTH = 700,
-  SVG_HEIGHT = 450,
-  POINT_RADIUS = 4,
-  POINT_RADIUS_HOVER = 8;
+const svgWidth = SVG_SIZE.width,
+  svgHeight = SVG_SIZE.height,
+  pointRadius = CIRCLE_RADIUS.basic,
+  pointRadiusHover = CIRCLE_RADIUS.hover;
 // d3 objects / methods
 const lineGenerator = d3.line(),
   svg = d3.select("svg"),
+  svgGeometry = d3.select("#geometry"),
   dragHandler = d3.drag();
 // buttons in DOM
 const clearBtn = document.getElementById("clear-svg"),
   undoBtn = document.getElementById("undo"),
-  redoBtn = document.getElementById("redo");
+  redoBtn = document.getElementById("redo"),
+  snapBtn = document.getElementById("snap-btn");
 // undo-redo module most used
-const command = track.trackManager.doCommand,
-  addPt = track.ADD,
-  movePt = track.MOVE,
-  updateStatus = track.STATUS,
-  clearPoints = track.CLEAR,
-  createGroup = track.GROUP,
-  setActive = track.ACTIVE;
+const doCommand = command.commandManager.doCommand,
+  addPt = command.ADD,
+  movePt = command.MOVE,
+  updateStatus = command.STATUS,
+  clearPoints = command.CLEAR,
+  createGroup = command.GROUP,
+  setActive = command.ACTIVE,
+  commandData = command.stateObject.data;
 // variables used in more functions
-let pathData,
-  cursorPosition = STATES.cursorPosition.noPoint,
+let cursorPosition = STATES.cursorPosition.noPoint,
   temporaryPoint,
-  ptIndex,
-  temporaryPoints = [];
+  activePtIndex,
+  temporaryPoints = [],
+  snap = true;
 // return values from undo-redo.mjs
 const activeId = () => {
-    return track.trackStateObject.activeId;
+    return command.stateObject.activeId;
   },
   points = () => {
-    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-      return track.trackStateObject.data[activeId()].points;
+    if (typeof commandData[activeId()] != "undefined") {
+      return commandData[activeId()].points;
     } else {
       return [];
     }
   },
   drawingStatus = () => {
-    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-      return track.trackStateObject.data[activeId()].drawingStatus;
+    if (typeof commandData[activeId()] != "undefined") {
+      return commandData[activeId()].drawingStatus;
     } else {
       return STATES.drawingStatus.notDrawing;
     }
   },
   polylineType = () => {
-    if (typeof track.trackStateObject.data[activeId()] != "undefined") {
-      return track.trackStateObject.data[activeId()].polylineType;
+    if (typeof commandData[activeId()] != "undefined") {
+      return commandData[activeId()].polylineType;
     } else {
       return STATES.polylineType.opened;
     }
   };
 
 // set svg size
-svg.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
+svg.attr("width", svgWidth).attr("height", svgHeight);
 
-// register event - add new point on click in svg
-svg.on("click", function (d) {
+// register events
+svg.on("click", svgClicked);
+dragHandler.on("start", started);
+dragHandler.on("drag", dragged);
+dragHandler.on("end", dragend);
+
+// register snap toggle button function
+snapBtn.onclick = function () {
+  snap = !snap;
+};
+
+// register clear Canvas button function
+clearBtn.onclick = function () {
+  svgGeometry.selectAll("g").remove();
+  doCommand(clearPoints);
+};
+// register undo button function
+undoBtn.onclick = function () {
+  command.commandManager.undo();
+  updateGeometry();
+  colorActive();
+};
+// register redo button function
+redoBtn.onclick = function () {
+  command.commandManager.redo();
+  updateGeometry();
+  colorActive();
+};
+// register undo / redo on keypress
+document.onkeypress = function (e) {
+  if (e.ctrlKey && e.code === "KeyY") {
+    command.commandManager.undo();
+    updateGeometry();
+    colorActive();
+  }
+  if (e.ctrlKey && e.code === "KeyZ") {
+    command.commandManager.redo();
+    updateGeometry();
+    colorActive();
+  }
+};
+
+function svgClicked(d) {
   if (drawingStatus()) {
     if (cursorPosition === 0) {
-      let newPoint = [d.layerX, d.layerY];
-      command(addPt, newPoint);
-      updateGeometry();
+      addNewPoint(d);
     }
     if (cursorPosition === 1) {
       finishClosedPolyline();
@@ -73,84 +121,54 @@ svg.on("click", function (d) {
     }
   } else {
     createSvgGroup();
-    let newPoint = [d.layerX, d.layerY];
-    command(addPt, newPoint);
-    updateGeometry();
+    addNewPoint(d);
   }
-});
+}
 
-// register event - drag existing point
-dragHandler.on("start", function (d) {
+function started() {
   if (!drawingStatus()) {
     let newActiveId = this.parentNode.parentNode.getAttribute("id");
     if (activeId() != newActiveId) {
-      command(setActive, newActiveId);
+      doCommand(setActive, newActiveId);
       colorActive();
     }
   }
-});
+}
 
-dragHandler.on("drag", function (d) {
+function dragged(d) {
   if (!drawingStatus()) {
     let circle = d3.select(this);
-    ptIndex = getPtId(this);
-
-    let newX = Math.max(POINT_RADIUS, Math.min(SVG_WIDTH - POINT_RADIUS, d.x));
-    let newY = Math.max(POINT_RADIUS, Math.min(SVG_HEIGHT - POINT_RADIUS, d.y));
-
+    ptHoverOn(circle);
+    activePtIndex = getPtId(this);
+    let newX = Math.max(pointRadius, Math.min(svgWidth - pointRadius, d.x));
+    let newY = Math.max(pointRadius, Math.min(svgHeight - pointRadius, d.y));
+    if (snap) {
+      newX = roundToSnap(newX, GRID_RESOLUTION);
+      newY = roundToSnap(newY, GRID_RESOLUTION);
+    }
     circle.attr("cx", newX).attr("cy", newY);
     temporaryPoints = Array.from(points());
     temporaryPoint = [newX, newY];
-    temporaryPoints[ptIndex] = temporaryPoint;
+    temporaryPoints[activePtIndex] = temporaryPoint;
     generatePathData(temporaryPoints);
     temporaryPoints = [];
   }
-});
+}
 
-dragHandler.on("end", function (d) {
+function dragend() {
   if (!drawingStatus()) {
-    command(movePt, { index: ptIndex, point: temporaryPoint });
+    doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
     temporaryPoint = [];
-    ptIndex = null;
+    activePtIndex = null;
+    ptHoverOff(d3.select(this));
   }
-});
-
-// register clear Canvas button function
-clearBtn.onclick = function () {
-  svg.selectAll("g").remove();
-  command(clearPoints);
-};
-// register undo button function
-undoBtn.onclick = function () {
-  track.trackManager.undo();
-  updateGeometry();
-  colorActive();
-};
-// register redo button function
-redoBtn.onclick = function () {
-  track.trackManager.redo();
-  updateGeometry();
-  colorActive();
-};
-// register undo / redo on keypress
-document.onkeypress = function (e) {
-  if (e.ctrlKey && e.code === "KeyY") {
-    track.trackManager.undo();
-    updateGeometry();
-    colorActive();
-  }
-  if (e.ctrlKey && e.code === "KeyZ") {
-    track.trackManager.redo();
-    updateGeometry();
-    colorActive();
-  }
-};
+}
 
 function createSvgGroup() {
   let newId = generateId();
-  command(setActive, newId);
-  command(createGroup);
-  let newGroup = svg.append("g").attr("id", activeId());
+  doCommand(setActive, newId);
+  doCommand(createGroup);
+  let newGroup = svgGeometry.append("g").attr("id", activeId());
   newGroup.append("path").classed("polyline", true);
   newGroup.append("g").classed("points", true);
   colorActive();
@@ -165,18 +183,34 @@ function generateId() {
   return newId;
 }
 
+function addNewPoint(d) {
+  let mouseX = d.layerX,
+    mouseY = d.layerY,
+    newPoint;
+  if (snap) {
+    newPoint = [
+      roundToSnap(mouseX, GRID_RESOLUTION),
+      roundToSnap(mouseY, GRID_RESOLUTION),
+    ];
+  } else {
+    newPoint = [mouseX, mouseY];
+  }
+  doCommand(addPt, newPoint);
+  updateGeometry();
+}
+
 function registerPointEvents() {
   let circles = d3.select("#" + activeId()).selectAll("circle");
   // hover on circles
   circles
     .on("mouseover", function () {
       let circle = d3.select(this);
-      let ptIndex = getPtId(this);
+      let circleIndex = getPtId(this);
       if (drawingStatus()) {
-        if (ptIndex === 0) {
+        if (circleIndex === 0) {
           cursorPosition = STATES.cursorPosition.firstPoint;
           ptHoverOn(circle);
-        } else if (ptIndex === points().length - 1) {
+        } else if (circleIndex === points().length - 1) {
           cursorPosition = STATES.cursorPosition.lastPoint;
           ptHoverOn(circle);
         } else {
@@ -199,16 +233,16 @@ function ptHoverOn(circle) {
   circle
     .transition()
     .duration(100)
-    .attr("r", POINT_RADIUS_HOVER)
-    .attr("fill", "orchid");
+    .attr("r", pointRadiusHover)
+    .attr("fill", "rgba(218, 112, 214, 0.5)");
 }
 
 function ptHoverOff(circle) {
   circle
     .transition()
     .duration(100)
-    .attr("r", POINT_RADIUS)
-    .attr("fill", "white");
+    .attr("r", pointRadius)
+    .attr("fill", "rgba(255, 255, 255, 0.5)");
 }
 
 function updateGeometry() {
@@ -237,8 +271,8 @@ function updateCircles() {
     .attr("cy", function (d) {
       return d[1];
     })
-    .attr("r", POINT_RADIUS)
-    .attr("fill", "white");
+    .attr("r", pointRadius)
+    .attr("fill", "rgba(255,255,255,0.5)");
   registerPointEvents();
 }
 
@@ -258,24 +292,24 @@ function updatePolyline() {
 }
 
 function generatePathData(points) {
-  pathData = lineGenerator(points);
+  let pathData = lineGenerator(points);
   if (polylineType()) {
     let closeString = ",Z";
     pathData = pathData.concat(closeString);
-    setPath();
+    setPath(pathData);
   } else {
-    setPath();
+    setPath(pathData);
   }
 }
 
-function setPath() {
+function setPath(data) {
   d3.select("#" + activeId())
     .select("path")
-    .attr("d", pathData);
+    .attr("d", data);
 }
 
 function finishClosedPolyline() {
-  command(updateStatus, {
+  doCommand(updateStatus, {
     drawStatus: STATES.drawingStatus.notDrawing,
     plineType: STATES.polylineType.closed,
   });
@@ -283,7 +317,7 @@ function finishClosedPolyline() {
 }
 
 function finishOpenedPolyline() {
-  command(updateStatus, {
+  doCommand(updateStatus, {
     drawStatus: STATES.drawingStatus.notDrawing,
     plineType: STATES.polylineType.opened,
   });
@@ -300,15 +334,15 @@ function drawingFinished() {
 }
 
 function checkButtons() {
-  if (track.trackManager.getCurrentState().position === 0) {
+  if (command.commandManager.getCurrentState().position === 0) {
     undoBtn.disabled = true;
   } else {
     undoBtn.disabled = false;
   }
   // disable redo button when not possible to redo
   if (
-    track.trackManager.getCurrentState().position >=
-    track.trackManager.getCurrentState().historyLength - 1
+    command.commandManager.getCurrentState().position >=
+    command.commandManager.getCurrentState().historyLength - 1
   ) {
     redoBtn.disabled = true;
   } else {
@@ -317,7 +351,13 @@ function checkButtons() {
 }
 
 function colorActive() {
-  let activeG = svg.select("#" + activeId());
-  svg.selectAll("g").classed("active", false);
+  let activeG = svgGeometry.select("#" + activeId());
+  svgGeometry.selectAll("g").classed("active", false);
   activeG.classed("active", true);
+}
+
+function roundToSnap(position, resolution) {
+  return position % resolution < resolution / 2
+    ? position - (position % resolution)
+    : position + resolution - (position % resolution);
 }
