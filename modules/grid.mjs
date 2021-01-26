@@ -6,6 +6,12 @@ const width = SVG_SIZE.width,
 
 const grid = d3.select("#grid");
 
+const showGridBtn = document.getElementById("show-grid-btn");
+
+showGridBtn.onclick = function () {
+  document.getElementById("grid").classList.toggle("hide-grid");
+};
+
 grid
   .selectAll(".vertical")
   .data(d3.range(1, width / resolution))

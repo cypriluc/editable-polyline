@@ -20,7 +20,8 @@ const lineGenerator = d3.line(),
 // buttons in DOM
 const clearBtn = document.getElementById("clear-svg"),
   undoBtn = document.getElementById("undo"),
-  redoBtn = document.getElementById("redo");
+  redoBtn = document.getElementById("redo"),
+  snapBtn = document.getElementById("snap-btn");
 // undo-redo module most used
 const doCommand = command.commandManager.doCommand,
   addPt = command.ADD,
@@ -70,6 +71,11 @@ svg.on("click", svgClicked);
 dragHandler.on("start", started);
 dragHandler.on("drag", dragged);
 dragHandler.on("end", dragend);
+
+// register snap toggle button function
+snapBtn.onclick = function () {
+  snap = !snap;
+};
 
 // register clear Canvas button function
 clearBtn.onclick = function () {
