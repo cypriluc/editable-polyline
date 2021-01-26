@@ -8,10 +8,10 @@ import * as command from "./modules/commands.mjs";
 import * as grid from "./modules/grid.mjs";
 
 // global constants
-const SVG_WIDTH = SVG_SIZE.width,
-  SVG_HEIGHT = SVG_SIZE.height,
-  POINT_RADIUS = CIRCLE_RADIUS.basic,
-  POINT_RADIUS_HOVER = CIRCLE_RADIUS.hover;
+const svgWidth = SVG_SIZE.width,
+  svgHeight = SVG_SIZE.height,
+  pointRadius = CIRCLE_RADIUS.basic,
+  pointRadiusHover = CIRCLE_RADIUS.hover;
 // d3 objects / methods
 const lineGenerator = d3.line(),
   svg = d3.select("svg"),
@@ -63,69 +63,13 @@ const activeId = () => {
   };
 
 // set svg size
-svg.attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT);
+svg.attr("width", svgWidth).attr("height", svgHeight);
 
-// register event - add new point on click in svg
-svg.on("click", newPoint);
+// register events
+svg.on("click", svgClicked);
 dragHandler.on("start", started);
 dragHandler.on("drag", dragged);
 dragHandler.on("end", dragend);
-
-function newPoint(d) {
-  if (drawingStatus()) {
-    if (cursorPosition === 0) {
-      let newPoint = [d.layerX, d.layerY];
-      doCommand(addPt, newPoint);
-      updateGeometry();
-    }
-    if (cursorPosition === 1) {
-      finishClosedPolyline();
-    }
-    if (cursorPosition === 3) {
-      finishOpenedPolyline();
-    }
-  } else {
-    createSvgGroup();
-    let newPoint = [d.layerX, d.layerY];
-    doCommand(addPt, newPoint);
-    updateGeometry();
-  }
-}
-
-function started(d) {
-  if (!drawingStatus()) {
-    let newActiveId = this.parentNode.parentNode.getAttribute("id");
-    if (activeId() != newActiveId) {
-      doCommand(setActive, newActiveId);
-      colorActive();
-    }
-  }
-}
-
-function dragged(d) {
-  if (!drawingStatus()) {
-    let circle = d3.select(this);
-    activePtIndex = getPtId(this);
-
-    let newX = Math.max(POINT_RADIUS, Math.min(SVG_WIDTH - POINT_RADIUS, d.x));
-    let newY = Math.max(POINT_RADIUS, Math.min(SVG_HEIGHT - POINT_RADIUS, d.y));
-
-    circle.attr("cx", newX).attr("cy", newY);
-    temporaryPoints = Array.from(points());
-    temporaryPoint = [newX, newY];
-    temporaryPoints[activePtIndex] = temporaryPoint;
-    generatePathData(temporaryPoints);
-    temporaryPoints = [];
-  }
-}
-
-function dragend(d) {
-  if (!drawingStatus()) {
-    doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
-    temporaryPoint = [];
-    activePtIndex = null;
-  }
-}
 
 // register clear Canvas button function
 clearBtn.onclick = function () {
@@ -158,6 +102,62 @@ document.onkeypress = function (e) {
   }
 };
 
+function svgClicked(d) {
+  if (drawingStatus()) {
+    if (cursorPosition === 0) {
+      addNewPoint(d);
+    }
+    if (cursorPosition === 1) {
+      finishClosedPolyline();
+    }
+    if (cursorPosition === 3) {
+      finishOpenedPolyline();
+    }
+  } else {
+    createSvgGroup();
+    addNewPoint(d);
+  }
+}
+
+function started() {
+  if (!drawingStatus()) {
+    let newActiveId = this.parentNode.parentNode.getAttribute("id");
+    if (activeId() != newActiveId) {
+      doCommand(setActive, newActiveId);
+      colorActive();
+    }
+  }
+}
+
+function dragged(d) {
+  if (!drawingStatus()) {
+    let circle = d3.select(this);
+    ptHoverOn(circle);
+    activePtIndex = getPtId(this);
+    let newX = Math.max(pointRadius, Math.min(svgWidth - pointRadius, d.x));
+    let newY = Math.max(pointRadius, Math.min(svgHeight - pointRadius, d.y));
+    if (snap) {
+      newX = roundToSnap(newX, GRID_RESOLUTION);
+      newY = roundToSnap(newY, GRID_RESOLUTION);
+    }
+    circle.attr("cx", newX).attr("cy", newY);
+    temporaryPoints = Array.from(points());
+    temporaryPoint = [newX, newY];
+    temporaryPoints[activePtIndex] = temporaryPoint;
+    generatePathData(temporaryPoints);
+    temporaryPoints = [];
+  }
+}
+
+function dragend() {
+  if (!drawingStatus()) {
+    doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
+    temporaryPoint = [];
+    activePtIndex = null;
+    ptHoverOff(d3.select(this));
+  }
+}
+
 function createSvgGroup() {
   let newId = generateId();
   doCommand(setActive, newId);
@@ -175,6 +175,22 @@ function generateId() {
     newId += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return newId;
+}
+
+function addNewPoint(d) {
+  let mouseX = d.layerX,
+    mouseY = d.layerY,
+    newPoint;
+  if (snap) {
+    newPoint = [
+      roundToSnap(mouseX, GRID_RESOLUTION),
+      roundToSnap(mouseY, GRID_RESOLUTION),
+    ];
+  } else {
+    newPoint = [mouseX, mouseY];
+  }
+  doCommand(addPt, newPoint);
+  updateGeometry();
 }
 
 function registerPointEvents() {
@@ -211,16 +227,16 @@ function ptHoverOn(circle) {
   circle
     .transition()
     .duration(100)
-    .attr("r", POINT_RADIUS_HOVER)
-    .attr("fill", "orchid");
+    .attr("r", pointRadiusHover)
+    .attr("fill", "rgba(218, 112, 214, 0.5)");
 }
 
 function ptHoverOff(circle) {
   circle
     .transition()
     .duration(100)
-    .attr("r", POINT_RADIUS)
-    .attr("fill", "white");
+    .attr("r", pointRadius)
+    .attr("fill", "rgba(255, 255, 255, 0.5)");
 }
 
 function updateGeometry() {
@@ -249,8 +265,8 @@ function updateCircles() {
     .attr("cy", function (d) {
       return d[1];
     })
-    .attr("r", POINT_RADIUS)
-    .attr("fill", "white");
+    .attr("r", pointRadius)
+    .attr("fill", "rgba(255,255,255,0.5)");
   registerPointEvents();
 }
 
@@ -332,4 +348,10 @@ function colorActive() {
   let activeG = svgGeometry.select("#" + activeId());
   svgGeometry.selectAll("g").classed("active", false);
   activeG.classed("active", true);
+}
+
+function roundToSnap(position, resolution) {
+  return position % resolution < resolution / 2
+    ? position - (position % resolution)
+    : position + resolution - (position % resolution);
 }

@@ -3,9 +3,11 @@ export const SVG_SIZE = {
   height: 450,
 };
 
+export const GRID_RESOLUTION = 10;
+
 export const CIRCLE_RADIUS = {
-  basic: 4,
-  hover: 8,
+  basic: 5,
+  hover: 10,
 };
 
 export const STATES = {
@@ -26,5 +28,3 @@ export const STATES = {
     closed: 1,
   },
 };
-
-export const GRID_RESOLUTION = 10;
