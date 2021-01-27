@@ -277,17 +277,19 @@ function updateCircles() {
 }
 
 function updatePolyline() {
-  if (drawingStatus()) {
-    svg.on("mousemove", function (d) {
-      temporaryPoints = Array.from(points());
-      temporaryPoint = [d.layerX, d.layerY];
-      temporaryPoints.push(temporaryPoint);
-      generatePathData(temporaryPoints);
-      temporaryPoints = [];
-      temporaryPoint = null;
-    });
-  } else {
+  if (!drawingStatus()) {
     generatePathData(points());
+  } else {
+    svg.on("mousemove", function (d) {
+      if (drawingStatus()) {
+        temporaryPoints = Array.from(points());
+        temporaryPoint = [d.layerX, d.layerY];
+        temporaryPoints.push(temporaryPoint);
+        generatePathData(temporaryPoints);
+        temporaryPoints = [];
+        temporaryPoint = null;
+      }
+    });
   }
 }
 

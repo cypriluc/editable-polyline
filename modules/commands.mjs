@@ -133,8 +133,8 @@ const createCommandManager = (target) => {
         position += 1;
         concreteCommand.execute();
         console.log(commandType);
-        console.log(target);
-        console.log("position:" + position, "history length:" + history.length);
+        // console.log("position:" + position, "history length:" + history.length);
+        //console.log(target.data[target.activeId]);
       }
     },
 
@@ -143,8 +143,8 @@ const createCommandManager = (target) => {
         history[position].undo();
         position -= 1;
         console.log("UNDO");
-        console.log(target);
-        console.log(this.getCurrentState());
+        //console.log(this.getCurrentState());
+        //console.log(target.data[target.activeId]);
       }
     },
 
@@ -153,12 +153,13 @@ const createCommandManager = (target) => {
         position += 1;
         history[position].execute();
         console.log("REDO");
-        console.log(target);
-        console.log(this.getCurrentState());
+        //console.log(this.getCurrentState());
+        //console.log(target.data[target.activeId]);
       }
     },
     getCurrentState() {
       return {
+        active: target.activeId,
         position: position,
         historyLength: history.length,
       };

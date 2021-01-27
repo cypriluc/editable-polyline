@@ -3,7 +3,7 @@ export const SVG_SIZE = {
   height: 450,
 };
 
-export const GRID_RESOLUTION = 10;
+export const GRID_RESOLUTION = 20;
 
 export const CIRCLE_RADIUS = {
   basic: 5,
