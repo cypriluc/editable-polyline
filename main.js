@@ -30,6 +30,7 @@ const doCommand = command.commandManager.doCommand,
   clearPoints = command.CLEAR,
   createGroup = command.GROUP,
   setActive = command.ACTIVE,
+  deletePath = command.DELETE,
   commandData = command.stateObject.data;
 // variables used in more functions
 let cursorPosition = STATES.cursorPosition.noPoint,
@@ -95,7 +96,7 @@ redoBtn.onclick = function () {
   colorActive();
 };
 // register undo / redo on keypress
-document.onkeypress = function (e) {
+document.onkeydown = function (e) {
   if (e.ctrlKey && e.code === "KeyY") {
     command.commandManager.undo();
     updateGeometry();
@@ -105,6 +106,16 @@ document.onkeypress = function (e) {
     command.commandManager.redo();
     updateGeometry();
     colorActive();
+  }
+  if (drawingStatus() && e.key === "Enter") {
+    finishClosedPolyline();
+  }
+  if (drawingStatus() && e.key === "Escape") {
+    finishOpenedPolyline();
+  }
+  if (activeId() && e.key === "Delete") {
+    doCommand(deletePath, activeId());
+    svgGeometry.select("#" + activeId()).remove();
   }
 };
 
@@ -120,7 +131,7 @@ function svgClicked(d) {
       finishOpenedPolyline();
     }
   } else {
-    createSvgGroup();
+    createNewGroup();
     addNewPoint(d);
   }
 }
@@ -164,10 +175,14 @@ function dragend() {
   }
 }
 
-function createSvgGroup() {
+function createNewGroup() {
   let newId = generateId();
   doCommand(setActive, newId);
   doCommand(createGroup);
+  appendSvgGroup();
+}
+
+function appendSvgGroup() {
   let newGroup = svgGeometry.append("g").attr("id", activeId());
   newGroup.append("path").classed("polyline", true);
   newGroup.append("g").classed("points", true);
@@ -246,6 +261,9 @@ function ptHoverOff(circle) {
 }
 
 function updateGeometry() {
+  if (document.getElementById(activeId()) === null) {
+    appendSvgGroup();
+  }
   updateCircles();
   updatePolyline();
   checkButtons();
@@ -295,10 +313,8 @@ function generatePathData(points) {
   if (polylineType()) {
     let closeString = ",Z";
     pathData = pathData.concat(closeString);
-    setPath(pathData);
-  } else {
-    setPath(pathData);
   }
+  setPath(pathData);
 }
 
 function setPath(data) {

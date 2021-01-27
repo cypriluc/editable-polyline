@@ -87,6 +87,18 @@ const createSwitchStatusCommand = (stateObject, statusObj) => {
   };
 };
 
+const createDeletePathCommand = (stateObject, id) => {
+  const previousState = stateObject.data[id];
+  return {
+    execute() {
+      delete stateObject.data[id];
+    },
+    undo() {
+      stateObject.data[id] = previousState;
+    },
+  };
+};
+
 const createClearCanvasCommand = (stateObject) => {
   const previousState = stateObject.data;
   return {
@@ -107,6 +119,7 @@ const STATUS = "STATUS";
 const CLEAR = "CLEAR";
 const GROUP = "GROUP";
 const ACTIVE = "ACTIVE";
+const DELETE = "DELETE";
 
 const commands = {
   [GROUP]: createNewSvgGroupCommand,
@@ -115,6 +128,7 @@ const commands = {
   [STATUS]: createSwitchStatusCommand,
   [CLEAR]: createClearCanvasCommand,
   [ACTIVE]: createSetActiveIdCommand,
+  [DELETE]: createDeletePathCommand,
 };
 
 const createCommandManager = (target) => {
@@ -133,8 +147,8 @@ const createCommandManager = (target) => {
         position += 1;
         concreteCommand.execute();
         console.log(commandType);
-        // console.log("position:" + position, "history length:" + history.length);
-        //console.log(target.data[target.activeId]);
+        //console.log("position:" + position, "history length:" + history.length);
+        console.log(target);
       }
     },
 
@@ -143,8 +157,8 @@ const createCommandManager = (target) => {
         history[position].undo();
         position -= 1;
         console.log("UNDO");
+        console.log(target);
         //console.log(this.getCurrentState());
-        //console.log(target.data[target.activeId]);
       }
     },
 
@@ -153,8 +167,8 @@ const createCommandManager = (target) => {
         position += 1;
         history[position].execute();
         console.log("REDO");
+        console.log(target);
         //console.log(this.getCurrentState());
-        //console.log(target.data[target.activeId]);
       }
     },
     getCurrentState() {
@@ -177,6 +191,7 @@ export {
   createSwitchStatusCommand,
   createClearCanvasCommand,
   createSetActiveIdCommand,
+  createDeletePathCommand,
   commands,
   createCommandManager,
   stateObject,
@@ -187,4 +202,5 @@ export {
   STATUS,
   CLEAR,
   ACTIVE,
+  DELETE,
 };
