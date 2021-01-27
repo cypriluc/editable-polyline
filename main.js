@@ -30,8 +30,7 @@ const doCommand = command.commandManager.doCommand,
   clearPoints = command.CLEAR,
   createGroup = command.GROUP,
   setActive = command.ACTIVE,
-  deletePath = command.DELETE,
-  commandData = command.stateObject.data;
+  deletePath = command.DELETE;
 // variables used in more functions
 let cursorPosition = STATES.cursorPosition.noPoint,
   temporaryPoint,
@@ -42,28 +41,37 @@ let cursorPosition = STATES.cursorPosition.noPoint,
 const activeId = () => {
     return command.stateObject.activeId;
   },
-  points = () => {
-    if (typeof commandData[activeId()] != "undefined") {
-      return commandData[activeId()].points;
+  commandData = () => {
+    return command.stateObject.data;
+  },
+  pathList = () => {
+    let list = [];
+    for (let path in commandData()) {
+      list.push(path);
+    }
+    return list;
+  },
+  points = (id) => {
+    if (typeof commandData()[id] != "undefined") {
+      return commandData()[id].points;
     } else {
       return [];
     }
   },
-  drawingStatus = () => {
-    if (typeof commandData[activeId()] != "undefined") {
-      return commandData[activeId()].drawingStatus;
+  drawingStatus = (id) => {
+    if (typeof commandData()[id] != "undefined") {
+      return commandData()[id].drawingStatus;
     } else {
       return STATES.drawingStatus.notDrawing;
     }
   },
-  polylineType = () => {
-    if (typeof commandData[activeId()] != "undefined") {
-      return commandData[activeId()].polylineType;
+  polylineType = (id) => {
+    if (typeof commandData()[id] != "undefined") {
+      return commandData()[id].polylineType;
     } else {
       return STATES.polylineType.opened;
     }
   };
-
 // set svg size
 svg.attr("width", svgWidth).attr("height", svgHeight);
 
@@ -86,31 +94,31 @@ clearBtn.onclick = function () {
 // register undo button function
 undoBtn.onclick = function () {
   command.commandManager.undo();
-  updateGeometry();
+  updateGeometryUndo();
   colorActive();
 };
 // register redo button function
 redoBtn.onclick = function () {
   command.commandManager.redo();
-  updateGeometry();
+  updateGeometryUndo();
   colorActive();
 };
 // register undo / redo on keypress
 document.onkeydown = function (e) {
   if (e.ctrlKey && e.code === "KeyY") {
     command.commandManager.undo();
-    updateGeometry();
+    updateGeometryUndo();
     colorActive();
   }
   if (e.ctrlKey && e.code === "KeyZ") {
     command.commandManager.redo();
-    updateGeometry();
+    updateGeometryUndo();
     colorActive();
   }
-  if (drawingStatus() && e.key === "Enter") {
+  if (drawingStatus(activeId()) && e.key === "Enter") {
     finishClosedPolyline();
   }
-  if (drawingStatus() && e.key === "Escape") {
+  if (drawingStatus(activeId()) && e.key === "Escape") {
     finishOpenedPolyline();
   }
   if (activeId() && e.key === "Delete") {
@@ -120,7 +128,7 @@ document.onkeydown = function (e) {
 };
 
 function svgClicked(d) {
-  if (drawingStatus()) {
+  if (drawingStatus(activeId())) {
     if (cursorPosition === 0) {
       addNewPoint(d);
     }
@@ -137,7 +145,7 @@ function svgClicked(d) {
 }
 
 function started() {
-  if (!drawingStatus()) {
+  if (!drawingStatus(activeId())) {
     let newActiveId = this.parentNode.parentNode.getAttribute("id");
     if (activeId() != newActiveId) {
       doCommand(setActive, newActiveId);
@@ -147,7 +155,7 @@ function started() {
 }
 
 function dragged(d) {
-  if (!drawingStatus()) {
+  if (!drawingStatus(activeId())) {
     let circle = d3.select(this);
     ptHoverOn(circle);
     activePtIndex = getPtId(this);
@@ -158,16 +166,16 @@ function dragged(d) {
       newY = roundToSnap(newY, GRID_RESOLUTION);
     }
     circle.attr("cx", newX).attr("cy", newY);
-    temporaryPoints = Array.from(points());
+    temporaryPoints = Array.from(points(activeId()));
     temporaryPoint = [newX, newY];
     temporaryPoints[activePtIndex] = temporaryPoint;
-    generatePathData(temporaryPoints);
+    generatePathData(temporaryPoints, activeId());
     temporaryPoints = [];
   }
 }
 
 function dragend() {
-  if (!drawingStatus()) {
+  if (!drawingStatus(activeId())) {
     doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
     temporaryPoint = [];
     activePtIndex = null;
@@ -179,11 +187,11 @@ function createNewGroup() {
   let newId = generateId();
   doCommand(setActive, newId);
   doCommand(createGroup);
-  appendSvgGroup();
+  appendSvgGroup(newId);
 }
 
-function appendSvgGroup() {
-  let newGroup = svgGeometry.append("g").attr("id", activeId());
+function appendSvgGroup(id) {
+  let newGroup = svgGeometry.append("g").attr("id", id);
   newGroup.append("path").classed("polyline", true);
   newGroup.append("g").classed("points", true);
   colorActive();
@@ -201,31 +209,29 @@ function generateId() {
 function addNewPoint(d) {
   let mouseX = d.layerX,
     mouseY = d.layerY,
-    newPoint;
+    newPoint = [mouseX, mouseY];
   if (snap) {
     newPoint = [
       roundToSnap(mouseX, GRID_RESOLUTION),
       roundToSnap(mouseY, GRID_RESOLUTION),
     ];
-  } else {
-    newPoint = [mouseX, mouseY];
   }
   doCommand(addPt, newPoint);
   updateGeometry();
 }
 
-function registerPointEvents() {
-  let circles = d3.select("#" + activeId()).selectAll("circle");
+function registerPointEvents(id) {
+  let circles = d3.select("#" + id).selectAll("circle");
   // hover on circles
   circles
     .on("mouseover", function () {
       let circle = d3.select(this);
       let circleIndex = getPtId(this);
-      if (drawingStatus()) {
+      if (drawingStatus(id)) {
         if (circleIndex === 0) {
           cursorPosition = STATES.cursorPosition.firstPoint;
           ptHoverOn(circle);
-        } else if (circleIndex === points().length - 1) {
+        } else if (circleIndex === points(id).length - 1) {
           cursorPosition = STATES.cursorPosition.lastPoint;
           ptHoverOn(circle);
         } else {
@@ -261,27 +267,36 @@ function ptHoverOff(circle) {
 }
 
 function updateGeometry() {
-  if (document.getElementById(activeId()) === null) {
-    appendSvgGroup();
-  }
-  updateCircles();
-  updatePolyline();
+  updateCircles(activeId());
+  updatePolyline(activeId());
   checkButtons();
 }
 
-function updateCircles() {
+function updateGeometryUndo() {
+  let allPaths = pathList();
+  allPaths.forEach(function (pathId) {
+    if (document.getElementById(pathId) === null) {
+      appendSvgGroup(pathId);
+    }
+    updateCircles(pathId);
+    updatePolyline(pathId);
+  });
+  checkButtons();
+}
+
+function updateCircles(id) {
   let circles = d3
-    .select("#" + activeId())
+    .select("#" + id)
     .select(".points")
     .selectAll("circle")
-    .data(points());
+    .data(points(id));
   circles.exit().remove();
   circles
     .enter()
     .append("circle")
     .merge(circles)
     .attr("id", function (d, i) {
-      return activeId() + "_" + i;
+      return id + "_" + i;
     })
     .attr("cx", function (d) {
       return d[0];
@@ -291,34 +306,34 @@ function updateCircles() {
     })
     .attr("r", pointRadius)
     .attr("fill", "rgba(255,255,255,0.5)");
-  registerPointEvents();
+  registerPointEvents(id);
 }
 
-function updatePolyline() {
-  generatePathData(points());
+function updatePolyline(id) {
+  generatePathData(points(id), id);
   svg.on("mousemove", function (d) {
-    if (drawingStatus()) {
-      temporaryPoints = Array.from(points());
+    if (drawingStatus(id)) {
+      temporaryPoints = Array.from(points(id));
       temporaryPoint = [d.layerX, d.layerY];
       temporaryPoints.push(temporaryPoint);
-      generatePathData(temporaryPoints);
+      generatePathData(temporaryPoints, id);
       temporaryPoints = [];
       temporaryPoint = null;
     }
   });
 }
 
-function generatePathData(points) {
+function generatePathData(points, id) {
   let pathData = lineGenerator(points);
-  if (polylineType()) {
+  if (polylineType(id)) {
     let closeString = ",Z";
     pathData = pathData.concat(closeString);
   }
-  setPath(pathData);
+  setPath(pathData, id);
 }
 
-function setPath(data) {
-  d3.select("#" + activeId())
+function setPath(data, id) {
+  d3.select("#" + id)
     .select("path")
     .attr("d", data);
 }
@@ -345,7 +360,7 @@ function getPtId(target) {
 
 function drawingFinished() {
   svg.on("mousemove", null);
-  generatePathData(points());
+  generatePathData(points(activeId()), activeId());
 }
 
 function checkButtons() {

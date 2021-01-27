@@ -100,15 +100,18 @@ const createDeletePathCommand = (stateObject, id) => {
 };
 
 const createClearCanvasCommand = (stateObject) => {
-  const previousState = stateObject.data;
+  const previousData = Object.assign({}, stateObject.data);
+  const previousActiveId = stateObject.activeId;
   return {
     execute() {
       for (let g in stateObject.data) {
         delete stateObject.data[g];
       }
+      stateObject.activeId = null;
     },
     undo() {
-      stateObject.data = previousState;
+      stateObject.data = previousData;
+      stateObject.activeId = previousActiveId;
     },
   };
 };
