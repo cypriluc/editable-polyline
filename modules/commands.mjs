@@ -1,4 +1,7 @@
 import { STATES } from "./constants.mjs";
+import { colorActive, appendSvgGroup, updateGeometry } from "../main.js";
+
+const svgGeometry = d3.select("#geometry");
 
 const createStateObject = () => {
   return {
@@ -13,9 +16,11 @@ const createSetActiveIdCommand = (stateObject, id) => {
   return {
     execute() {
       stateObject.activeId = id;
+      colorActive();
     },
     undo() {
       stateObject.activeId = previousActiveId;
+      colorActive();
     },
   };
 };
@@ -29,6 +34,7 @@ const createNewSvgGroupCommand = (stateObject) => {
         drawingStatus: STATES.drawingStatus.drawing,
         polylineType: STATES.polylineType.opened,
       };
+      appendSvgGroup(stateObject.activeId);
     },
     undo() {
       stateObject.data[stateObject.activeId] = previousGroup;
@@ -43,6 +49,7 @@ const createAddPointCommand = (stateObject, newPoint) => {
   return {
     execute() {
       stateObject.data[stateObject.activeId].points.push(newPoint);
+      updateGeometry();
     },
     undo() {
       stateObject.data[stateObject.activeId].points = previousPoints;
@@ -92,6 +99,7 @@ const createDeletePathCommand = (stateObject, id) => {
   return {
     execute() {
       delete stateObject.data[id];
+      svgGeometry.select("#" + stateObject.activeId).remove();
     },
     undo() {
       stateObject.data[id] = previousState;
@@ -108,6 +116,7 @@ const createClearCanvasCommand = (stateObject) => {
         delete stateObject.data[g];
       }
       stateObject.activeId = null;
+      svgGeometry.selectAll("g").remove();
     },
     undo() {
       stateObject.data = previousData;

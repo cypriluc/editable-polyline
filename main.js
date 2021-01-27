@@ -88,7 +88,6 @@ snapBtn.onclick = function () {
 
 // register clear Canvas button function
 clearBtn.onclick = function () {
-  svgGeometry.selectAll("g").remove();
   doCommand(clearPoints);
 };
 // register undo button function
@@ -123,7 +122,6 @@ document.onkeydown = function (e) {
   }
   if (activeId() && e.key === "Delete") {
     doCommand(deletePath, activeId());
-    svgGeometry.select("#" + activeId()).remove();
   }
 };
 
@@ -187,7 +185,6 @@ function createNewGroup() {
   let newId = generateId();
   doCommand(setActive, newId);
   doCommand(createGroup);
-  appendSvgGroup(newId);
 }
 
 function appendSvgGroup(id) {
@@ -217,7 +214,6 @@ function addNewPoint(d) {
     ];
   }
   doCommand(addPt, newPoint);
-  updateGeometry();
 }
 
 function registerPointEvents(id) {
@@ -391,3 +387,5 @@ function roundToSnap(position, resolution) {
     ? position - (position % resolution)
     : position + resolution - (position % resolution);
 }
+
+export { colorActive, appendSvgGroup, updateGeometry };
