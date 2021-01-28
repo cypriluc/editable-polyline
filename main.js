@@ -18,6 +18,7 @@ const lineGenerator = d3.line(),
   dragHandler = d3.drag();
 // buttons in DOM
 const clearBtn = document.getElementById("clear-svg"),
+  deleteBtn = document.getElementById("delete-path"),
   undoBtn = document.getElementById("undo"),
   redoBtn = document.getElementById("redo"),
   snapBtn = document.getElementById("snap-btn");
@@ -80,6 +81,10 @@ snapBtn.onclick = function () {
 // register clear Canvas button function
 clearBtn.onclick = function () {
   doCommand(clearPoints);
+};
+// register delete path button
+deleteBtn.onclick = function () {
+  doCommand(deletePath, activeId());
 };
 // register undo button function
 undoBtn.onclick = function () {
