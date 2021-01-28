@@ -1,9 +1,22 @@
 export const SVG_SIZE = {
   width: 700,
-  height: 450,
+  height: 440,
 };
 
-export const GRID_RESOLUTION = 20;
+export const GRID_RESOLUTION = (function () {
+  let resolution = 20;
+  function setResolution(num) {
+    resolution = num;
+  }
+  return {
+    set: function (n) {
+      setResolution(n);
+    },
+    value: function () {
+      return resolution;
+    },
+  };
+})();
 
 export const CIRCLE_RADIUS = {
   basic: 5,

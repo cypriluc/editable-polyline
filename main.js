@@ -64,6 +64,9 @@ const activeId = () => {
     } else {
       return STATES.polylineType.opened;
     }
+  },
+  resolution = () => {
+    return GRID_RESOLUTION.value();
   };
 // set svg size
 svg.attr("width", svgWidth).attr("height", svgHeight);
@@ -155,8 +158,8 @@ function dragged(d) {
     let newX = Math.max(pointRadius, Math.min(svgWidth - pointRadius, d.x));
     let newY = Math.max(pointRadius, Math.min(svgHeight - pointRadius, d.y));
     if (snap) {
-      newX = roundToSnap(newX, GRID_RESOLUTION);
-      newY = roundToSnap(newY, GRID_RESOLUTION);
+      newX = roundToSnap(newX, resolution());
+      newY = roundToSnap(newY, resolution());
     }
     circle.attr("cx", newX).attr("cy", newY);
     temporaryPoints = Array.from(points(activeId()));
@@ -197,8 +200,8 @@ function addNewPoint(d) {
     newPoint = [mouseX, mouseY];
   if (snap) {
     newPoint = [
-      roundToSnap(mouseX, GRID_RESOLUTION),
-      roundToSnap(mouseY, GRID_RESOLUTION),
+      roundToSnap(mouseX, resolution()),
+      roundToSnap(mouseY, resolution()),
     ];
   }
   doCommand(addPt, newPoint);
