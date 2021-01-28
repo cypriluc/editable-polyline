@@ -15,7 +15,6 @@ const svgWidth = SVG_SIZE.width,
 // d3 objects / methods
 const lineGenerator = d3.line(),
   svg = d3.select("svg"),
-  svgGeometry = d3.select("#geometry"),
   dragHandler = d3.drag();
 // buttons in DOM
 const clearBtn = document.getElementById("clear-svg"),
@@ -43,13 +42,6 @@ const activeId = () => {
   },
   commandData = () => {
     return command.stateObject.data;
-  },
-  pathList = () => {
-    let list = [];
-    for (let path in commandData()) {
-      list.push(path);
-    }
-    return list;
   },
   points = (id) => {
     if (typeof commandData()[id] != "undefined") {
@@ -85,7 +77,6 @@ dragHandler.on("end", dragend);
 snapBtn.onclick = function () {
   snap = !snap;
 };
-
 // register clear Canvas button function
 clearBtn.onclick = function () {
   doCommand(clearPoints);
@@ -93,26 +84,18 @@ clearBtn.onclick = function () {
 // register undo button function
 undoBtn.onclick = function () {
   command.commandManager.undo();
-  updateGeometryUndo();
-  colorActive();
 };
 // register redo button function
 redoBtn.onclick = function () {
   command.commandManager.redo();
-  updateGeometryUndo();
-  colorActive();
 };
 // register undo / redo on keypress
 document.onkeydown = function (e) {
   if (e.ctrlKey && e.code === "KeyY") {
     command.commandManager.undo();
-    updateGeometryUndo();
-    colorActive();
   }
   if (e.ctrlKey && e.code === "KeyZ") {
     command.commandManager.redo();
-    updateGeometryUndo();
-    colorActive();
   }
   if (drawingStatus(activeId()) && e.key === "Enter") {
     finishClosedPolyline();
@@ -147,7 +130,6 @@ function started() {
     let newActiveId = this.parentNode.parentNode.getAttribute("id");
     if (activeId() != newActiveId) {
       doCommand(setActive, newActiveId);
-      colorActive();
     }
   }
 }
@@ -185,13 +167,6 @@ function createNewGroup() {
   let newId = generateId();
   doCommand(setActive, newId);
   doCommand(createGroup);
-}
-
-function appendSvgGroup(id) {
-  let newGroup = svgGeometry.append("g").attr("id", id);
-  newGroup.append("path").classed("polyline", true);
-  newGroup.append("g").classed("points", true);
-  colorActive();
 }
 
 function generateId() {
@@ -260,24 +235,6 @@ function ptHoverOff(circle) {
     .duration(100)
     .attr("r", pointRadius)
     .attr("fill", "rgba(255, 255, 255, 0.5)");
-}
-
-function updateGeometry() {
-  updateCircles(activeId());
-  updatePolyline(activeId());
-  checkButtons();
-}
-
-function updateGeometryUndo() {
-  let allPaths = pathList();
-  allPaths.forEach(function (pathId) {
-    if (document.getElementById(pathId) === null) {
-      appendSvgGroup(pathId);
-    }
-    updateCircles(pathId);
-    updatePolyline(pathId);
-  });
-  checkButtons();
 }
 
 function updateCircles(id) {
@@ -359,33 +316,10 @@ function drawingFinished() {
   generatePathData(points(activeId()), activeId());
 }
 
-function checkButtons() {
-  if (command.commandManager.getCurrentState().position === 0) {
-    undoBtn.disabled = true;
-  } else {
-    undoBtn.disabled = false;
-  }
-  // disable redo button when not possible to redo
-  if (
-    command.commandManager.getCurrentState().position >=
-    command.commandManager.getCurrentState().historyLength - 1
-  ) {
-    redoBtn.disabled = true;
-  } else {
-    redoBtn.disabled = false;
-  }
-}
-
-function colorActive() {
-  let activeG = svgGeometry.select("#" + activeId());
-  svgGeometry.selectAll("g").classed("active", false);
-  activeG.classed("active", true);
-}
-
 function roundToSnap(position, resolution) {
   return position % resolution < resolution / 2
     ? position - (position % resolution)
     : position + resolution - (position % resolution);
 }
 
-export { colorActive, appendSvgGroup, updateGeometry };
+export { undoBtn, redoBtn, updateCircles, updatePolyline };
