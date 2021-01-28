@@ -11,9 +11,15 @@ const grid = d3.select("#grid");
 drawGrid();
 
 const showGridBtn = document.getElementById("show-grid-btn");
+const ResBtn5 = document.getElementById("res-5");
 const ResBtn10 = document.getElementById("res-10");
 const ResBtn20 = document.getElementById("res-20");
-const ResBtn30 = document.getElementById("res-30");
+const ResBtn40 = document.getElementById("res-40");
+
+ResBtn5.onclick = function () {
+  GRID_RESOLUTION.set(5);
+  drawGrid();
+};
 
 ResBtn10.onclick = function () {
   GRID_RESOLUTION.set(10);
@@ -25,8 +31,8 @@ ResBtn20.onclick = function () {
   drawGrid();
 };
 
-ResBtn30.onclick = function () {
-  GRID_RESOLUTION.set(30);
+ResBtn40.onclick = function () {
+  GRID_RESOLUTION.set(40);
   drawGrid();
 };
 

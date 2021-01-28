@@ -5,14 +5,11 @@ export const SVG_SIZE = {
 
 export const GRID_RESOLUTION = (function () {
   let resolution = 20;
-  function setResolution(num) {
-    resolution = num;
-  }
   return {
-    set: function (n) {
-      setResolution(n);
+    set(n) {
+      resolution = n;
     },
-    value: function () {
+    value() {
       return resolution;
     },
   };
