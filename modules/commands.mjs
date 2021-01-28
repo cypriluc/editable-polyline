@@ -26,7 +26,6 @@ const createSetActiveIdCommand = (stateObject, id) => {
 };
 
 const createNewSvgGroupCommand = (stateObject) => {
-  const previousGroup = stateObject.data[stateObject.activeId];
   return {
     execute() {
       stateObject.data[stateObject.activeId] = {
@@ -87,6 +86,7 @@ const createSwitchStatusCommand = (stateObject, statusObj) => {
       stateObject.data[stateObject.activeId].drawingStatus =
         statusObj.drawStatus;
       stateObject.data[stateObject.activeId].polylineType = statusObj.plineType;
+      main.updatePolyline(stateObject.activeId);
     },
     undo() {
       stateObject.data[

@@ -97,10 +97,18 @@ document.onkeydown = function (e) {
   if (e.ctrlKey && e.code === "KeyZ") {
     command.commandManager.redo();
   }
-  if (drawingStatus(activeId()) && e.key === "Enter") {
+  if (
+    drawingStatus(activeId()) &&
+    points(activeId()).length > 2 &&
+    e.key === "Enter"
+  ) {
     finishClosedPolyline();
   }
-  if (drawingStatus(activeId()) && e.key === "Escape") {
+  if (
+    drawingStatus(activeId()) &&
+    points(activeId()).length > 1 &&
+    e.key === "Escape"
+  ) {
     finishOpenedPolyline();
   }
   if (activeId() && e.key === "Delete") {
@@ -113,10 +121,10 @@ function svgClicked(d) {
     if (cursorPosition === 0) {
       addNewPoint(d);
     }
-    if (cursorPosition === 1) {
+    if (cursorPosition === 1 && points(activeId()).length > 2) {
       finishClosedPolyline();
     }
-    if (cursorPosition === 3) {
+    if (cursorPosition === 3 && points(activeId()).length > 1) {
       finishOpenedPolyline();
     }
   } else {
@@ -191,36 +199,6 @@ function addNewPoint(d) {
   doCommand(addPt, newPoint);
 }
 
-function registerPointEvents(id) {
-  let circles = d3.select("#" + id).selectAll("circle");
-  // hover on circles
-  circles
-    .on("mouseover", function () {
-      let circle = d3.select(this);
-      let circleIndex = getPtId(this);
-      if (drawingStatus(id)) {
-        if (circleIndex === 0) {
-          cursorPosition = STATES.cursorPosition.firstPoint;
-          ptHoverOn(circle);
-        } else if (circleIndex === points(id).length - 1) {
-          cursorPosition = STATES.cursorPosition.lastPoint;
-          ptHoverOn(circle);
-        } else {
-          cursorPosition = STATES.cursorPosition.middlePoint;
-        }
-      } else {
-        ptHoverOn(circle);
-      }
-    })
-    .on("mouseout", function () {
-      let circle = d3.select(this);
-      ptHoverOff(circle);
-      cursorPosition = STATES.cursorPosition.noPoint;
-    });
-  //call drag handler
-  dragHandler(circles);
-}
-
 function ptHoverOn(circle) {
   circle
     .transition()
@@ -260,6 +238,40 @@ function updateCircles(id) {
     .attr("r", pointRadius)
     .attr("fill", "rgba(255,255,255,0.5)");
   registerPointEvents(id);
+}
+
+function registerPointEvents(id) {
+  let circles = d3.select("#" + id).selectAll("circle");
+  // hover on circles
+  circles
+    .on("mouseover", function () {
+      let circle = d3.select(this);
+      let circleIndex = getPtId(this);
+      if (drawingStatus(id)) {
+        if (circleIndex === 0) {
+          cursorPosition = STATES.cursorPosition.firstPoint;
+          if (points(activeId()).length > 2) {
+            ptHoverOn(circle);
+          }
+        } else if (circleIndex === points(id).length - 1) {
+          cursorPosition = STATES.cursorPosition.lastPoint;
+          if (points(activeId()).length > 1) {
+            ptHoverOn(circle);
+          }
+        } else {
+          cursorPosition = STATES.cursorPosition.middlePoint;
+        }
+      } else {
+        ptHoverOn(circle);
+      }
+    })
+    .on("mouseout", function () {
+      let circle = d3.select(this);
+      ptHoverOff(circle);
+      cursorPosition = STATES.cursorPosition.noPoint;
+    });
+  //call drag handler
+  dragHandler(circles);
 }
 
 function updatePolyline(id) {
