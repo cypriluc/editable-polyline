@@ -14,6 +14,8 @@ Clone or download the repository and run the files locally through a local web s
 
 ## Usage
 
+![polyline](https://user-images.githubusercontent.com/64001284/106741109-90894f00-661b-11eb-95e1-d2aec52124a0.png)
+
 Start drawing a polyline by clicking on the canvas.
 
 Finish the polyline by:
@@ -33,3 +35,10 @@ Edit polyline shape by dragging polyline control points
 
 * _Delete path_ -> delete active polyline
 * _Clear canvas_ -> delete all polylines
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
