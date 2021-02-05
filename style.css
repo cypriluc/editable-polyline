@@ -14,8 +14,8 @@ path {
 }
 
 circle {
-  stroke: rgb(54, 54, 54);
   stroke-width: 1px;
+  visibility: hidden;
 }
 
 line {
@@ -29,6 +29,7 @@ line {
 }
 .active circle {
   stroke: orchid;
+  visibility: visible;
 }
 
 .clear-svg {
