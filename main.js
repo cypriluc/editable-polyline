@@ -342,4 +342,4 @@ function roundToSnap(position, resolution) {
     : position + resolution - (position % resolution);
 }
 
-export { undoBtn, redoBtn, updateCircles, updatePolyline };
+export { undoBtn, redoBtn, updateCircles, updatePolyline, svgClicked};

@@ -10,7 +10,7 @@ svg {
 path {
   fill: none;
   stroke: rgb(54, 54, 54);
-  stroke-width: 1px;
+  stroke-width: 3px;
 }
 
 circle {

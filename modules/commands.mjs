@@ -1,7 +1,8 @@
 import { STATES } from "./constants.mjs";
 import * as main from "../main.js";
 
-const svgGeometry = d3.select("#geometry");
+const svgGeometry = d3.select("#geometry"),
+  svg = d3.select("svg");
 
 const createStateObject = () => {
   return {
@@ -235,10 +236,35 @@ function colorActive() {
   let activeG = svgGeometry.select("#" + stateObject.activeId);
   svgGeometry.selectAll("g").classed("active", false);
   activeG.classed("active", true);
+  addPathsEvent();
+}
+
+function addPathsEvent() {
+  let allPaths = document.getElementsByClassName("path-group");
+  let inActivePaths = [];
+  if (allPaths.length > 1) {
+    for (let group of allPaths) {
+      if (!group.classList.contains("active")) {
+        inActivePaths.push(group);
+      }
+    }
+    inActivePaths.forEach(function (path) {
+      path.addEventListener("click", function (e) {
+        console.log("_____CLICK!!!!!!!!!!!!!");
+        svg.on("click", null);
+        let newActiveId = e.target.parentNode.getAttribute("id");
+        commandManager.doCommand(ACTIVE, newActiveId);
+        //setTimeout(svg.on("click", main.svgClicked()), 3000);
+      });
+    });
+  }
 }
 
 function appendSvgGroup(id) {
-  let newGroup = svgGeometry.append("g").attr("id", id);
+  let newGroup = svgGeometry
+    .append("g")
+    .attr("id", id)
+    .classed("path-group", true);
   newGroup.append("path").classed("polyline", true);
   newGroup.append("g").classed("points", true);
   colorActive();
