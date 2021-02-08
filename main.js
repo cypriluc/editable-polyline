@@ -94,6 +94,7 @@ document.querySelectorAll('input[name="modes"]').forEach((input) => {
     if (checkedMode === "move-pline") {
       CURRENT_MODE.set(MODES.move);
     }
+    command.colorActive();
   });
 });
 

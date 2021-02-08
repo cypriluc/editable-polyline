@@ -234,14 +234,22 @@ const commandManager = createCommandManager(stateObject);
 
 function colorActive() {
   let activeG = svgGeometry.select("#" + stateObject.activeId);
-  svgGeometry.selectAll("g").classed("active", false);
+  svgGeometry
+    .selectAll("g")
+    .classed("active", false)
+    .classed("visible-points", false);
   activeG.classed("active", true);
+  let currentMode = CURRENT_MODE.get();
+  if (currentMode === 0 || currentMode === 1) {
+    activeG.classed("visible-points", true);
+  }
   addPathsEvent();
 }
 
 function addPathsEvent() {
   let allPaths = document.getElementsByClassName("path-group");
   let inActivePaths = [];
+  let currentMode = CURRENT_MODE.get();
   if (allPaths.length > 1) {
     for (let group of allPaths) {
       if (!group.classList.contains("active")) {
@@ -250,7 +258,7 @@ function addPathsEvent() {
     }
     inActivePaths.forEach(function (path) {
       path.addEventListener("click", function (e) {
-        if (CURRENT_MODE.get() === 1 || CURRENT_MODE.get() === 2) {
+        if (currentMode === 1 || currentMode === 2) {
           let newActiveId = e.target.parentNode.getAttribute("id");
           commandManager.doCommand(ACTIVE, newActiveId);
         }
@@ -300,6 +308,7 @@ export {
   createSetActiveIdCommand,
   createDeletePathCommand,
   commands,
+  colorActive,
   createCommandManager,
   stateObject,
   commandManager,

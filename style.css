@@ -27,7 +27,7 @@ line {
 .active path {
   stroke: orchid;
 }
-.active circle {
+.visible-points circle {
   stroke: orchid;
   visibility: visible;
 }
