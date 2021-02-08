@@ -14,6 +14,22 @@
   </head>
   <body>
     <div class="position-fixed clear-svg btn-toolbar">
+      <div
+        class="btn-group btn-group-toggle m-1 button-container"
+        role="group"
+        data-toggle="buttons"
+      >
+        <label class="btn btn-outline-secondary btn-sm active">
+          <input type="radio" name="modes" id="draw-pline" checked /> Draw
+        </label>
+        <label class="btn btn-outline-secondary btn-sm">
+          <input type="radio" name="modes" id="edit-pline" /> Edit
+        </label>
+        <label class="btn btn-outline-secondary btn-sm">
+          <input type="radio" name="modes" id="move-pline" /> Move
+        </label>
+      </div>
+
       <div class="btn-group m-1 button-container" role="group">
         <button
           id="show-grid-btn"
@@ -54,6 +70,7 @@
           </div>
         </div>
       </div>
+
       <div class="btn-group m-1 button-container" role="group">
         <button
           id="undo"

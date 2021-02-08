@@ -1,4 +1,4 @@
-import { STATES } from "./constants.mjs";
+import { PATH_STATES, CURRENT_MODE } from "./constants.mjs";
 import * as main from "../main.js";
 
 const svgGeometry = d3.select("#geometry"),
@@ -31,8 +31,8 @@ const createNewSvgGroupCommand = (stateObject) => {
     execute() {
       stateObject.data[stateObject.activeId] = {
         points: [],
-        drawingStatus: STATES.drawingStatus.drawing,
-        polylineType: STATES.polylineType.opened,
+        drawingStatus: PATH_STATES.drawingStatus.drawing,
+        polylineType: PATH_STATES.polylineType.opened,
       };
       // update DOM
       appendSvgGroup(stateObject.activeId);
@@ -250,11 +250,10 @@ function addPathsEvent() {
     }
     inActivePaths.forEach(function (path) {
       path.addEventListener("click", function (e) {
-        console.log("_____CLICK!!!!!!!!!!!!!");
-        svg.on("click", null);
-        let newActiveId = e.target.parentNode.getAttribute("id");
-        commandManager.doCommand(ACTIVE, newActiveId);
-        //setTimeout(svg.on("click", main.svgClicked()), 3000);
+        if (CURRENT_MODE.get() === 1 || CURRENT_MODE.get() === 2) {
+          let newActiveId = e.target.parentNode.getAttribute("id");
+          commandManager.doCommand(ACTIVE, newActiveId);
+        }
       });
     });
   }

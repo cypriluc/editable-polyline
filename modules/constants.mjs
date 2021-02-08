@@ -15,12 +15,30 @@ export const GRID_RESOLUTION = (function () {
   };
 })();
 
+export const MODES = {
+  draw: 0,
+  edit: 1,
+  move: 2,
+};
+
+export const CURRENT_MODE = (function () {
+  let mode = MODES.draw;
+  return {
+    set(m) {
+      mode = m;
+    },
+    get() {
+      return mode;
+    },
+  };
+})();
+
 export const CIRCLE_RADIUS = {
   basic: 5,
   hover: 10,
 };
 
-export const STATES = {
+export const PATH_STATES = {
   cursorPosition: {
     noPoint: 0,
     firstPoint: 1,
