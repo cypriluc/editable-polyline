@@ -272,7 +272,20 @@ function appendSvgGroup(id) {
     .append("g")
     .attr("id", id)
     .classed("path-group", true);
-  newGroup.append("path").classed("polyline", true);
+  let polylineId = "pline" + id;
+
+  newGroup.append("path").attr("id", polylineId);
+
+  newGroup
+    .append("use")
+    .classed("polyline-hover-area", true)
+    .attr("xlink:href", "#" + polylineId);
+
+  newGroup
+    .append("use")
+    .classed("polyline", true)
+    .attr("xlink:href", "#" + polylineId);
+
   newGroup.append("g").classed("points", true);
   colorActive();
 }

@@ -315,7 +315,7 @@ function registerPointEvents(id) {
 function updatePolyline(id) {
   generatePathData(points(id), id);
   svg.on("mousemove", function (d) {
-    if (drawingStatus(id)) {
+    if (drawingStatus(id) && CURRENT_MODE.get() === 0) {
       temporaryPoints = Array.from(points(id));
       temporaryPoint = [d.layerX, d.layerY];
       temporaryPoints.push(temporaryPoint);
