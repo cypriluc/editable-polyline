@@ -17,7 +17,8 @@ const svgWidth = SVG_SIZE.width,
 // d3 objects / methods
 const lineGenerator = d3.line(),
   svg = d3.select("svg"),
-  dragHandler = d3.drag();
+  dragPointHandler = d3.drag(),
+  dragGroupHandler = d3.drag();
 // buttons in DOM
 const clearBtn = document.getElementById("clear-svg"),
   deleteBtn = document.getElementById("delete-path"),
@@ -75,10 +76,7 @@ const activeId = () => {
 svg.attr("width", svgWidth).attr("height", svgHeight);
 
 // register events
-svg.on("click", svgClicked);
-dragHandler.on("start", started);
-dragHandler.on("drag", dragged);
-dragHandler.on("end", dragend);
+addDrawListener();
 
 // register modes radio buttons function
 document.querySelectorAll('input[name="modes"]').forEach((input) => {
@@ -87,15 +85,30 @@ document.querySelectorAll('input[name="modes"]').forEach((input) => {
     let checkedMode = e.target.querySelector("input").id;
     if (checkedMode === "draw-pline") {
       CURRENT_MODE.set(MODES.draw);
+      removeEditListeners();
+      removeMoveListeners();
+      addDrawListener();
       document.querySelector("svg").style.cursor =
         "url(./img/pen-tool.png), auto";
     }
     if (checkedMode === "edit-pline") {
       CURRENT_MODE.set(MODES.edit);
+      if (drawingStatus(activeId())) {
+        finishOpenedPolyline();
+      }
+      removeDrawListener();
+      removeMoveListeners();
+      addEditListeners();
       document.querySelector("svg").style.cursor = "pointer";
     }
     if (checkedMode === "move-pline") {
       CURRENT_MODE.set(MODES.move);
+      if (drawingStatus(activeId())) {
+        finishOpenedPolyline();
+      }
+      removeDrawListener();
+      removeEditListeners();
+      addMoveListeners();
       document.querySelector("svg").style.cursor = "move";
     }
     command.colorActive();
@@ -152,10 +165,36 @@ document.onkeydown = function (e) {
   }
 };
 
-function svgClicked(d) {
-  if (CURRENT_MODE.get() === 0) {
-    drawPath(d);
-  }
+function addDrawListener() {
+  svg.on("click", drawPath);
+}
+
+function removeDrawListener() {
+  svg.on("click", null);
+}
+
+function addEditListeners() {
+  dragPointHandler.on("start", started);
+  dragPointHandler.on("drag", dragged);
+  dragPointHandler.on("end", dragend);
+}
+
+function removeEditListeners() {
+  dragPointHandler.on("start", null);
+  dragPointHandler.on("drag", null);
+  dragPointHandler.on("end", null);
+}
+
+function addMoveListeners() {
+  dragGroupHandler.on("start", startedGroup);
+  dragGroupHandler.on("drag", draggedGroup);
+  dragGroupHandler.on("end", dragendGroup);
+}
+
+function removeMoveListeners() {
+  dragGroupHandler.on("start", null);
+  dragGroupHandler.on("drag", null);
+  dragGroupHandler.on("end", null);
 }
 
 function drawPath(d) {
@@ -176,42 +215,42 @@ function drawPath(d) {
 }
 
 function started() {
-  if (!drawingStatus(activeId()) && CURRENT_MODE.get() === 1) {
-    let newActiveId = this.parentNode.parentNode.getAttribute("id");
-    if (activeId() != newActiveId) {
-      doCommand(setActive, newActiveId);
-    }
+  let newActiveId = this.parentNode.parentNode.getAttribute("id");
+  if (activeId() != newActiveId) {
+    doCommand(setActive, newActiveId);
   }
 }
 
 function dragged(d) {
-  if (!drawingStatus(activeId()) && CURRENT_MODE.get() === 1) {
-    let circle = d3.select(this);
-    ptHoverOn(circle);
-    activePtIndex = getPtId(this);
-    let newX = Math.max(pointRadius, Math.min(svgWidth - pointRadius, d.x));
-    let newY = Math.max(pointRadius, Math.min(svgHeight - pointRadius, d.y));
-    if (snap) {
-      newX = roundToSnap(newX, resolution());
-      newY = roundToSnap(newY, resolution());
-    }
-    circle.attr("cx", newX).attr("cy", newY);
-    temporaryPoints = Array.from(points(activeId()));
-    temporaryPoint = [newX, newY];
-    temporaryPoints[activePtIndex] = temporaryPoint;
-    generatePathData(temporaryPoints, activeId());
-    temporaryPoints = [];
+  let circle = d3.select(this);
+  ptHoverOn(circle);
+  activePtIndex = getPtId(this);
+  let newX = Math.max(pointRadius, Math.min(svgWidth - pointRadius, d.x));
+  let newY = Math.max(pointRadius, Math.min(svgHeight - pointRadius, d.y));
+  if (snap) {
+    newX = roundToSnap(newX, resolution());
+    newY = roundToSnap(newY, resolution());
   }
+  circle.attr("cx", newX).attr("cy", newY);
+  temporaryPoints = Array.from(points(activeId()));
+  temporaryPoint = [newX, newY];
+  temporaryPoints[activePtIndex] = temporaryPoint;
+  generatePathData(temporaryPoints, activeId());
+  temporaryPoints = [];
 }
 
 function dragend() {
-  if (!drawingStatus(activeId()) && CURRENT_MODE.get() === 1) {
-    doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
-    temporaryPoint = [];
-    activePtIndex = null;
-    ptHoverOff(d3.select(this));
-  }
+  doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
+  temporaryPoint = [];
+  activePtIndex = null;
+  ptHoverOff(d3.select(this));
 }
+
+function startedGroup() {}
+
+function draggedGroup() {}
+
+function dragendGroup() {}
 
 function createNewGroup() {
   let newId = generateId();
@@ -313,7 +352,7 @@ function registerPointEvents(id) {
       cursorPosition = PATH_STATES.cursorPosition.noPoint;
     });
   //call drag handler
-  dragHandler(circles);
+  dragPointHandler(circles);
 }
 
 function updatePolyline(id) {

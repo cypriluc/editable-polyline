@@ -76,6 +76,21 @@ const createMovePointCommand = (stateObject, ptObj) => {
   };
 };
 
+const createTransformGroupCommand = (stateObject, ptArray) => {
+  const previousPoints = Array.from(
+    stateObject.data[stateObject.activeId].points
+  );
+  return {
+    execute() {
+      stateObject.data[stateObject.activeId].points = ptArray;
+    },
+    undo() {
+      stateObject.data[stateObject.activeId].points = previousPoints;
+      updateGeometry();
+    },
+  };
+};
+
 const createSwitchStatusCommand = (stateObject, statusObj) => {
   const previousDrawingStatus =
     stateObject.data[stateObject.activeId].drawingStatus;
@@ -164,6 +179,7 @@ const CLEAR = "CLEAR";
 const GROUP = "GROUP";
 const ACTIVE = "ACTIVE";
 const DELETE = "DELETE";
+const TRANSFORM = "TRANSFORM";
 
 const commands = {
   [GROUP]: createNewSvgGroupCommand,
@@ -173,6 +189,7 @@ const commands = {
   [CLEAR]: createClearCanvasCommand,
   [ACTIVE]: createSetActiveIdCommand,
   [DELETE]: createDeletePathCommand,
+  [TRANSFORM]: createTransformGroupCommand,
 };
 
 const createCommandManager = (target) => {
