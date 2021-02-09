@@ -1,6 +1,6 @@
 export const SVG_SIZE = {
   width: 1000,
-  height: 500,
+  height: 520,
 };
 
 export const GRID_RESOLUTION = (function () {
