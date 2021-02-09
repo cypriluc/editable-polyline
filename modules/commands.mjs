@@ -1,7 +1,8 @@
-import { STATES } from "./constants.mjs";
+import { PATH_STATES, CURRENT_MODE } from "./constants.mjs";
 import * as main from "../main.js";
 
-const svgGeometry = d3.select("#geometry");
+const svgGeometry = d3.select("#geometry"),
+  svg = d3.select("svg");
 
 const createStateObject = () => {
   return {
@@ -30,8 +31,8 @@ const createNewSvgGroupCommand = (stateObject) => {
     execute() {
       stateObject.data[stateObject.activeId] = {
         points: [],
-        drawingStatus: STATES.drawingStatus.drawing,
-        polylineType: STATES.polylineType.opened,
+        drawingStatus: PATH_STATES.drawingStatus.drawing,
+        polylineType: PATH_STATES.polylineType.opened,
       };
       // update DOM
       appendSvgGroup(stateObject.activeId);
@@ -233,13 +234,58 @@ const commandManager = createCommandManager(stateObject);
 
 function colorActive() {
   let activeG = svgGeometry.select("#" + stateObject.activeId);
-  svgGeometry.selectAll("g").classed("active", false);
+  svgGeometry
+    .selectAll("g")
+    .classed("active", false)
+    .classed("visible-points", false);
   activeG.classed("active", true);
+  let currentMode = CURRENT_MODE.get();
+  if (currentMode === 0 || currentMode === 1) {
+    activeG.classed("visible-points", true);
+  }
+  addPathsEvent();
+}
+
+function addPathsEvent() {
+  let allPaths = document.getElementsByClassName("path-group");
+  let inActivePaths = [];
+  let currentMode = CURRENT_MODE.get();
+  if (allPaths.length > 1) {
+    for (let group of allPaths) {
+      if (!group.classList.contains("active")) {
+        inActivePaths.push(group);
+      }
+    }
+    inActivePaths.forEach(function (path) {
+      path.addEventListener("click", function (e) {
+        if (currentMode === 1 || currentMode === 2) {
+          let newActiveId = e.target.parentNode.getAttribute("id");
+          commandManager.doCommand(ACTIVE, newActiveId);
+        }
+      });
+    });
+  }
 }
 
 function appendSvgGroup(id) {
-  let newGroup = svgGeometry.append("g").attr("id", id);
-  newGroup.append("path").classed("polyline", true);
+  let newGroup = svgGeometry
+    .append("g")
+    .attr("id", id)
+    .classed("path-group", true);
+  let polylineId = "pline" + id;
+
+  newGroup.append("path").attr("id", polylineId);
+
+  newGroup
+    .append("use")
+    .classed("polyline-hover-area", true)
+    .attr("xlink:href", "#" + polylineId);
+
+  newGroup
+    .append("use")
+    .classed("polyline", true)
+    .attr("xlink:href", "#" + polylineId);
+
   newGroup.append("g").classed("points", true);
   colorActive();
 }
@@ -275,6 +321,7 @@ export {
   createSetActiveIdCommand,
   createDeletePathCommand,
   commands,
+  colorActive,
   createCommandManager,
   stateObject,
   commandManager,

@@ -1,8 +1,10 @@
 import {
   SVG_SIZE,
   CIRCLE_RADIUS,
-  STATES,
+  PATH_STATES,
   GRID_RESOLUTION,
+  MODES,
+  CURRENT_MODE,
 } from "./modules/constants.mjs";
 import * as command from "./modules/commands.mjs";
 import * as grid from "./modules/grid.mjs";
@@ -32,11 +34,12 @@ const doCommand = command.commandManager.doCommand,
   setActive = command.ACTIVE,
   deletePath = command.DELETE;
 // variables used in more functions
-let cursorPosition = STATES.cursorPosition.noPoint,
+let cursorPosition = PATH_STATES.cursorPosition.noPoint,
   temporaryPoint,
   activePtIndex,
   temporaryPoints = [],
   snap = true;
+
 // return values from undo-redo.mjs
 const activeId = () => {
     return command.stateObject.activeId;
@@ -55,14 +58,14 @@ const activeId = () => {
     if (typeof commandData()[id] != "undefined") {
       return commandData()[id].drawingStatus;
     } else {
-      return STATES.drawingStatus.notDrawing;
+      return PATH_STATES.drawingStatus.notDrawing;
     }
   },
   polylineType = (id) => {
     if (typeof commandData()[id] != "undefined") {
       return commandData()[id].polylineType;
     } else {
-      return STATES.polylineType.opened;
+      return PATH_STATES.polylineType.opened;
     }
   },
   resolution = () => {
@@ -76,6 +79,28 @@ svg.on("click", svgClicked);
 dragHandler.on("start", started);
 dragHandler.on("drag", dragged);
 dragHandler.on("end", dragend);
+
+// register modes radio buttons function
+document.querySelectorAll('input[name="modes"]').forEach((input) => {
+  let button = input.parentElement;
+  button.addEventListener("click", function (e) {
+    let checkedMode = e.target.querySelector("input").id;
+    if (checkedMode === "draw-pline") {
+      CURRENT_MODE.set(MODES.draw);
+      document.querySelector("svg").style.cursor =
+        "url(./img/pen-tool.png), auto";
+    }
+    if (checkedMode === "edit-pline") {
+      CURRENT_MODE.set(MODES.edit);
+      document.querySelector("svg").style.cursor = "pointer";
+    }
+    if (checkedMode === "move-pline") {
+      CURRENT_MODE.set(MODES.move);
+      document.querySelector("svg").style.cursor = "move";
+    }
+    command.colorActive();
+  });
+});
 
 // register snap toggle button function
 snapBtn.onclick = function () {
@@ -119,12 +144,21 @@ document.onkeydown = function (e) {
   ) {
     finishOpenedPolyline();
   }
+  if (activeId() && !drawingStatus(activeId()) && e.key === "Escape") {
+    doCommand(setActive, null);
+  }
   if (activeId() && e.key === "Delete") {
     doCommand(deletePath, activeId());
   }
 };
 
 function svgClicked(d) {
+  if (CURRENT_MODE.get() === 0) {
+    drawPath(d);
+  }
+}
+
+function drawPath(d) {
   if (drawingStatus(activeId())) {
     if (cursorPosition === 0) {
       addNewPoint(d);
@@ -142,7 +176,7 @@ function svgClicked(d) {
 }
 
 function started() {
-  if (!drawingStatus(activeId())) {
+  if (!drawingStatus(activeId()) && CURRENT_MODE.get() === 1) {
     let newActiveId = this.parentNode.parentNode.getAttribute("id");
     if (activeId() != newActiveId) {
       doCommand(setActive, newActiveId);
@@ -151,7 +185,7 @@ function started() {
 }
 
 function dragged(d) {
-  if (!drawingStatus(activeId())) {
+  if (!drawingStatus(activeId()) && CURRENT_MODE.get() === 1) {
     let circle = d3.select(this);
     ptHoverOn(circle);
     activePtIndex = getPtId(this);
@@ -171,7 +205,7 @@ function dragged(d) {
 }
 
 function dragend() {
-  if (!drawingStatus(activeId())) {
+  if (!drawingStatus(activeId()) && CURRENT_MODE.get() === 1) {
     doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
     temporaryPoint = [];
     activePtIndex = null;
@@ -257,26 +291,26 @@ function registerPointEvents(id) {
       let circleIndex = getPtId(this);
       if (drawingStatus(id)) {
         if (circleIndex === 0) {
-          cursorPosition = STATES.cursorPosition.firstPoint;
+          cursorPosition = PATH_STATES.cursorPosition.firstPoint;
           if (points(activeId()).length > 2) {
             ptHoverOn(circle);
           }
         } else if (circleIndex === points(id).length - 1) {
-          cursorPosition = STATES.cursorPosition.lastPoint;
+          cursorPosition = PATH_STATES.cursorPosition.lastPoint;
           if (points(activeId()).length > 1) {
             ptHoverOn(circle);
           }
         } else {
-          cursorPosition = STATES.cursorPosition.middlePoint;
+          cursorPosition = PATH_STATES.cursorPosition.middlePoint;
         }
-      } else {
+      } else if (CURRENT_MODE.get() === 1) {
         ptHoverOn(circle);
       }
     })
     .on("mouseout", function () {
       let circle = d3.select(this);
       ptHoverOff(circle);
-      cursorPosition = STATES.cursorPosition.noPoint;
+      cursorPosition = PATH_STATES.cursorPosition.noPoint;
     });
   //call drag handler
   dragHandler(circles);
@@ -285,7 +319,7 @@ function registerPointEvents(id) {
 function updatePolyline(id) {
   generatePathData(points(id), id);
   svg.on("mousemove", function (d) {
-    if (drawingStatus(id)) {
+    if (drawingStatus(id) && CURRENT_MODE.get() === 0) {
       temporaryPoints = Array.from(points(id));
       temporaryPoint = [d.layerX, d.layerY];
       temporaryPoints.push(temporaryPoint);
@@ -313,16 +347,16 @@ function setPath(data, id) {
 
 function finishClosedPolyline() {
   doCommand(updateStatus, {
-    drawStatus: STATES.drawingStatus.notDrawing,
-    plineType: STATES.polylineType.closed,
+    drawStatus: PATH_STATES.drawingStatus.notDrawing,
+    plineType: PATH_STATES.polylineType.closed,
   });
   drawingFinished();
 }
 
 function finishOpenedPolyline() {
   doCommand(updateStatus, {
-    drawStatus: STATES.drawingStatus.notDrawing,
-    plineType: STATES.polylineType.opened,
+    drawStatus: PATH_STATES.drawingStatus.notDrawing,
+    plineType: PATH_STATES.polylineType.opened,
   });
   drawingFinished();
 }
