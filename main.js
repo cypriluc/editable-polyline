@@ -87,12 +87,16 @@ document.querySelectorAll('input[name="modes"]').forEach((input) => {
     let checkedMode = e.target.querySelector("input").id;
     if (checkedMode === "draw-pline") {
       CURRENT_MODE.set(MODES.draw);
+      document.querySelector("svg").style.cursor =
+        "url(./img/pen-tool.png), auto";
     }
     if (checkedMode === "edit-pline") {
       CURRENT_MODE.set(MODES.edit);
+      document.querySelector("svg").style.cursor = "pointer";
     }
     if (checkedMode === "move-pline") {
       CURRENT_MODE.set(MODES.move);
+      document.querySelector("svg").style.cursor = "move";
     }
     command.colorActive();
   });

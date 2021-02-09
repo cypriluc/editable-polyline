@@ -13,106 +13,115 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="position-fixed clear-svg btn-toolbar">
-      <div
-        class="btn-group btn-group-toggle m-1 button-container"
-        role="group"
-        data-toggle="buttons"
-      >
-        <label class="btn btn-outline-secondary btn-sm active">
-          <input type="radio" name="modes" id="draw-pline" checked /> Draw
-        </label>
-        <label class="btn btn-outline-secondary btn-sm">
-          <input type="radio" name="modes" id="edit-pline" /> Edit
-        </label>
-        <label class="btn btn-outline-secondary btn-sm">
-          <input type="radio" name="modes" id="move-pline" /> Move
-        </label>
-      </div>
+    <div class=".container-fluid m-0 p-1">
+      <div class="row m-0 p-2 btn-toolbar d-flex justify-content-end">
+        <div
+          class="btn-group btn-group-toggle m-1 button-container"
+          role="group"
+          data-toggle="buttons"
+        >
+          <label class="btn btn-outline-secondary btn-sm active">
+            <input type="radio" name="modes" id="draw-pline" checked /> Draw
+          </label>
+          <label class="btn btn-outline-secondary btn-sm">
+            <input type="radio" name="modes" id="edit-pline" /> Edit
+          </label>
+          <label class="btn btn-outline-secondary btn-sm">
+            <input type="radio" name="modes" id="move-pline" /> Move
+          </label>
+        </div>
 
-      <div class="btn-group m-1 button-container" role="group">
-        <button
-          id="show-grid-btn"
-          type="button"
-          class="btn btn-sm btn-outline-secondary active"
-          data-toggle="button"
-          aria-pressed="true"
-          autocomplete="off"
-        >
-          Show grid
-        </button>
-        <button
-          id="snap-btn"
-          type="button"
-          class="btn btn-sm btn-outline-secondary active"
-          data-toggle="button"
-          aria-pressed="true"
-          autocomplete="off"
-        >
-          Snap
-        </button>
-        <div class="btn-group">
+        <div class="btn-group m-1 button-container" role="group">
           <button
-            class="btn btn-sm btn-outline-secondary dropdown-toggle"
+            id="show-grid-btn"
             type="button"
-            id="grid-resolution"
-            data-toggle="dropdown"
-            aria-haspopup="true"
-            aria-expanded="false"
+            class="btn btn-sm btn-outline-secondary active"
+            data-toggle="button"
+            aria-pressed="true"
+            autocomplete="off"
           >
-            Resolution
+            Show grid
           </button>
-          <div class="dropdown-menu" aria-labelledby="grid-resolution">
-            <button id="res-5" class="dropdown-item" type="button">5</button>
-            <button id="res-10" class="dropdown-item" type="button">10</button>
-            <button id="res-20" class="dropdown-item" type="button">20</button>
-            <button id="res-40" class="dropdown-item" type="button">40</button>
+          <button
+            id="snap-btn"
+            type="button"
+            class="btn btn-sm btn-outline-secondary active"
+            data-toggle="button"
+            aria-pressed="true"
+            autocomplete="off"
+          >
+            Snap
+          </button>
+          <div class="btn-group">
+            <button
+              class="btn btn-sm btn-outline-secondary dropdown-toggle"
+              type="button"
+              id="grid-resolution"
+              data-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              Resolution
+            </button>
+            <div class="dropdown-menu" aria-labelledby="grid-resolution">
+              <button id="res-5" class="dropdown-item" type="button">5</button>
+              <button id="res-10" class="dropdown-item" type="button">
+                10
+              </button>
+              <button id="res-20" class="dropdown-item" type="button">
+                20
+              </button>
+              <button id="res-40" class="dropdown-item" type="button">
+                40
+              </button>
+            </div>
           </div>
+        </div>
+
+        <div class="btn-group m-1 button-container" role="group">
+          <button
+            id="undo"
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            disabled
+          >
+            Undo
+          </button>
+          <button
+            id="redo"
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            disabled
+          >
+            Redo
+          </button>
+        </div>
+        <div class="btn-group m-1 button-container" role="group">
+          <button
+            id="delete-path"
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+          >
+            Delete path
+          </button>
+          <button
+            id="clear-svg"
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+          >
+            Clear Canvas
+          </button>
         </div>
       </div>
 
-      <div class="btn-group m-1 button-container" role="group">
-        <button
-          id="undo"
-          type="button"
-          class="btn btn-sm btn-outline-secondary"
-          disabled
-        >
-          Undo
-        </button>
-        <button
-          id="redo"
-          type="button"
-          class="btn btn-sm btn-outline-secondary"
-          disabled
-        >
-          Redo
-        </button>
-      </div>
-      <div class="btn-group m-1 button-container" role="group">
-        <button
-          id="delete-path"
-          type="button"
-          class="btn btn-outline-secondary btn-sm"
-        >
-          Delete path
-        </button>
-        <button
-          id="clear-svg"
-          type="button"
-          class="btn btn-outline-secondary btn-sm"
-        >
-          Clear Canvas
-        </button>
+      <div class="row m-0 mt-4 p-1 d-flex justify-content-center"">
+        <svg>
+          <g id="grid"></g>
+          <g id="geometry"></g>
+        </svg>
       </div>
     </div>
 
-    <div class="d-flex justify-content-center h-100 align-items-center">
-      <svg>
-        <g id="grid"></g>
-        <g id="geometry"></g>
-      </svg>
-    </div>
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
       integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
