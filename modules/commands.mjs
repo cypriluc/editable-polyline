@@ -52,11 +52,11 @@ const createAddPointCommand = (stateObject, newPoint) => {
   return {
     execute() {
       stateObject.data[stateObject.activeId].points.push(newPoint);
-      updateGeometry();
+      main.updateGeometry();
     },
     undo() {
       stateObject.data[stateObject.activeId].points = previousPoints;
-      updateGeometry();
+      main.updateGeometry();
     },
   };
 };
@@ -65,13 +65,46 @@ const createMovePointCommand = (stateObject, ptObj) => {
   const previousPoints = Array.from(
     stateObject.data[stateObject.activeId].points
   );
+
   return {
     execute() {
       stateObject.data[stateObject.activeId].points[ptObj.index] = ptObj.point;
     },
     undo() {
       stateObject.data[stateObject.activeId].points = previousPoints;
-      updateGeometry();
+      main.updateGeometry();
+    },
+  };
+};
+
+const createTransformGroupCommand = (stateObject, translation) => {
+  const previousTranslation = translation;
+  return {
+    execute() {
+      for (
+        let i = 0;
+        i < stateObject.data[stateObject.activeId].points.length;
+        i++
+      ) {
+        stateObject.data[stateObject.activeId].points[i][0] += translation.x;
+        stateObject.data[stateObject.activeId].points[i][1] += translation.y;
+      }
+
+      main.updateGeometry();
+    },
+    undo() {
+      for (
+        let i = 0;
+        i < stateObject.data[stateObject.activeId].points.length;
+        i++
+      ) {
+        stateObject.data[stateObject.activeId].points[i][0] -=
+          previousTranslation.x;
+        stateObject.data[stateObject.activeId].points[i][1] -=
+          previousTranslation.y;
+      }
+      console.log(stateObject.data[stateObject.activeId].points);
+      main.updateGeometry();
     },
   };
 };
@@ -164,6 +197,7 @@ const CLEAR = "CLEAR";
 const GROUP = "GROUP";
 const ACTIVE = "ACTIVE";
 const DELETE = "DELETE";
+const TRANSFORM = "TRANSFORM";
 
 const commands = {
   [GROUP]: createNewSvgGroupCommand,
@@ -173,6 +207,7 @@ const commands = {
   [CLEAR]: createClearCanvasCommand,
   [ACTIVE]: createSetActiveIdCommand,
   [DELETE]: createDeletePathCommand,
+  [TRANSFORM]: createTransformGroupCommand,
 };
 
 const createCommandManager = (target) => {
@@ -247,10 +282,11 @@ function colorActive() {
 }
 
 function addPathsEvent() {
+  console.log("____ADD_PATH_EVENT__");
   let allPaths = document.getElementsByClassName("path-group");
   let inActivePaths = [];
   let currentMode = CURRENT_MODE.get();
-  if (allPaths.length > 1) {
+  if (allPaths.length > 0) {
     for (let group of allPaths) {
       if (!group.classList.contains("active")) {
         inActivePaths.push(group);
@@ -258,8 +294,9 @@ function addPathsEvent() {
     }
     inActivePaths.forEach(function (path) {
       path.addEventListener("click", function (e) {
-        if (currentMode === 1 || currentMode === 2) {
-          let newActiveId = e.target.parentNode.getAttribute("id");
+        let newActiveId = e.target.parentNode.getAttribute("id");
+        if (newActiveId != stateObject.activeId && currentMode != 0) {
+          console.log("___NEW_ACTIVE_ID__");
           commandManager.doCommand(ACTIVE, newActiveId);
         }
       });
@@ -307,11 +344,6 @@ function checkButtons() {
   }
 }
 
-function updateGeometry() {
-  main.updateCircles(stateObject.activeId);
-  main.updatePolyline(stateObject.activeId);
-}
-
 export {
   createStateObject,
   createAddPointCommand,
@@ -332,4 +364,5 @@ export {
   CLEAR,
   ACTIVE,
   DELETE,
+  TRANSFORM,
 };

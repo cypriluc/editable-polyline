@@ -12,6 +12,10 @@ path {
   fill: none;
 }
 
+label:hover {
+  cursor: pointer;
+}
+
 .polyline {
   stroke: rgb(54, 54, 54);
   stroke-width: 2px;
