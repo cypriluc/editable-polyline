@@ -33,13 +33,15 @@ const doCommand = command.commandManager.doCommand,
   clearPoints = command.CLEAR,
   createGroup = command.GROUP,
   setActive = command.ACTIVE,
-  deletePath = command.DELETE;
+  deletePath = command.DELETE,
+  movePath = command.TRANSFORM;
 // variables used in more functions
 let cursorPosition = PATH_STATES.cursorPosition.noPoint,
   temporaryPoint,
   activePtIndex,
   temporaryPoints = [],
-  snap = true;
+  snap = true,
+  delta = {};
 
 // return values from undo-redo.mjs
 const activeId = () => {
@@ -99,7 +101,7 @@ document.querySelectorAll('input[name="modes"]').forEach((input) => {
       removeDrawListener();
       removeMoveListeners();
       addEditListeners();
-      document.querySelector("svg").style.cursor = "pointer";
+      document.querySelector("svg").style.cursor = "default";
     }
     if (checkedMode === "move-pline") {
       CURRENT_MODE.set(MODES.move);
@@ -174,13 +176,11 @@ function removeDrawListener() {
 }
 
 function addEditListeners() {
-  dragPointHandler.on("start", started);
   dragPointHandler.on("drag", dragged);
   dragPointHandler.on("end", dragend);
 }
 
 function removeEditListeners() {
-  dragPointHandler.on("start", null);
   dragPointHandler.on("drag", null);
   dragPointHandler.on("end", null);
 }
@@ -214,43 +214,67 @@ function drawPath(d) {
   }
 }
 
-function started() {
-  let newActiveId = this.parentNode.parentNode.getAttribute("id");
-  if (activeId() != newActiveId) {
-    doCommand(setActive, newActiveId);
-  }
-}
-
 function dragged(d) {
-  let circle = d3.select(this);
-  ptHoverOn(circle);
-  activePtIndex = getPtId(this);
-  let newX = Math.max(pointRadius, Math.min(svgWidth - pointRadius, d.x));
-  let newY = Math.max(pointRadius, Math.min(svgHeight - pointRadius, d.y));
-  if (snap) {
-    newX = roundToSnap(newX, resolution());
-    newY = roundToSnap(newY, resolution());
+  if (this.parentNode.parentNode.getAttribute("id") === activeId()) {
+    let circle = d3.select(this);
+    ptHoverOn(circle);
+    activePtIndex = getPtId(this);
+    let newX = Math.max(pointRadius, Math.min(svgWidth - pointRadius, d.x));
+    let newY = Math.max(pointRadius, Math.min(svgHeight - pointRadius, d.y));
+    if (snap) {
+      newX = roundToSnap(newX, resolution());
+      newY = roundToSnap(newY, resolution());
+    }
+    circle.attr("cx", newX).attr("cy", newY);
+    temporaryPoints = Array.from(points(activeId()));
+    temporaryPoint = [newX, newY];
+    temporaryPoints[activePtIndex] = temporaryPoint;
+    generatePathData(temporaryPoints, activeId());
+    temporaryPoints = [];
   }
-  circle.attr("cx", newX).attr("cy", newY);
-  temporaryPoints = Array.from(points(activeId()));
-  temporaryPoint = [newX, newY];
-  temporaryPoints[activePtIndex] = temporaryPoint;
-  generatePathData(temporaryPoints, activeId());
-  temporaryPoints = [];
 }
 
 function dragend() {
-  doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
-  temporaryPoint = [];
-  activePtIndex = null;
-  ptHoverOff(d3.select(this));
+  if (this.parentNode.parentNode.getAttribute("id") === activeId()) {
+    doCommand(movePt, { index: activePtIndex, point: temporaryPoint });
+    temporaryPoint = [];
+    activePtIndex = null;
+    ptHoverOff(d3.select(this));
+  }
 }
 
-function startedGroup() {}
+// doplnit attr.("transform", "translate(deltaX, deltaY") - temporary points ala dragged()
+function startedGroup(d) {
+  if (this.id === activeId()) {
+    temporaryPoint = [d.x, d.y];
+  }
+}
 
-function draggedGroup() {}
+function draggedGroup(d) {
+  if (this.id === activeId()) {
+    let currentPoint = [d.x, d.y];
+    delta = {
+      x: currentPoint[0] - temporaryPoint[0],
+      y: currentPoint[1] - temporaryPoint[1],
+    };
+    d3.select(this).attr("transform", `translate(${delta.x}, ${delta.y})`);
+  }
+}
 
-function dragendGroup() {}
+function dragendGroup() {
+  if (this.id === activeId()) {
+    temporaryPoint = null;
+    temporaryPoints = Array.from(points(activeId()));
+
+    temporaryPoints = temporaryPoints.forEach(function (point) {
+      point[0] += delta.x;
+      point[1] += delta.y;
+    });
+
+    doCommand(movePath, temporaryPoints);
+    temporaryPoints = [];
+  }
+}
 
 function createNewGroup() {
   let newId = generateId();
@@ -407,6 +431,9 @@ function getPtId(target) {
 function drawingFinished() {
   svg.on("mousemove", null);
   generatePathData(points(activeId()), activeId());
+  //select all groups - call draggrouphandler
+  let groups = svg.selectAll(".path-group");
+  dragGroupHandler(groups);
 }
 
 function roundToSnap(position, resolution) {

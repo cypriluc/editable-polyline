@@ -264,10 +264,11 @@ function colorActive() {
 }
 
 function addPathsEvent() {
+  console.log("____ADD_PATH_EVENT__");
   let allPaths = document.getElementsByClassName("path-group");
   let inActivePaths = [];
   let currentMode = CURRENT_MODE.get();
-  if (allPaths.length > 1) {
+  if (allPaths.length > 0) {
     for (let group of allPaths) {
       if (!group.classList.contains("active")) {
         inActivePaths.push(group);
@@ -275,8 +276,9 @@ function addPathsEvent() {
     }
     inActivePaths.forEach(function (path) {
       path.addEventListener("click", function (e) {
-        if (currentMode === 1 || currentMode === 2) {
-          let newActiveId = e.target.parentNode.getAttribute("id");
+        let newActiveId = e.target.parentNode.getAttribute("id");
+        if (newActiveId != stateObject.activeId && currentMode != 0) {
+          console.log("___NEW_ACTIVE_ID__");
           commandManager.doCommand(ACTIVE, newActiveId);
         }
       });
@@ -349,4 +351,5 @@ export {
   CLEAR,
   ACTIVE,
   DELETE,
+  TRANSFORM,
 };
