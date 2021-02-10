@@ -52,11 +52,11 @@ const createAddPointCommand = (stateObject, newPoint) => {
   return {
     execute() {
       stateObject.data[stateObject.activeId].points.push(newPoint);
-      updateGeometry();
+      main.updateGeometry();
     },
     undo() {
       stateObject.data[stateObject.activeId].points = previousPoints;
-      updateGeometry();
+      main.updateGeometry();
     },
   };
 };
@@ -65,28 +65,46 @@ const createMovePointCommand = (stateObject, ptObj) => {
   const previousPoints = Array.from(
     stateObject.data[stateObject.activeId].points
   );
+
   return {
     execute() {
       stateObject.data[stateObject.activeId].points[ptObj.index] = ptObj.point;
     },
     undo() {
       stateObject.data[stateObject.activeId].points = previousPoints;
-      updateGeometry();
+      main.updateGeometry();
     },
   };
 };
 
-const createTransformGroupCommand = (stateObject, ptArray) => {
-  const previousPoints = Array.from(
-    stateObject.data[stateObject.activeId].points
-  );
+const createTransformGroupCommand = (stateObject, translation) => {
+  const previousTranslation = translation;
   return {
     execute() {
-      stateObject.data[stateObject.activeId].points = ptArray;
+      for (
+        let i = 0;
+        i < stateObject.data[stateObject.activeId].points.length;
+        i++
+      ) {
+        stateObject.data[stateObject.activeId].points[i][0] += translation.x;
+        stateObject.data[stateObject.activeId].points[i][1] += translation.y;
+      }
+
+      main.updateGeometry();
     },
     undo() {
-      stateObject.data[stateObject.activeId].points = previousPoints;
-      updateGeometry();
+      for (
+        let i = 0;
+        i < stateObject.data[stateObject.activeId].points.length;
+        i++
+      ) {
+        stateObject.data[stateObject.activeId].points[i][0] -=
+          previousTranslation.x;
+        stateObject.data[stateObject.activeId].points[i][1] -=
+          previousTranslation.y;
+      }
+      console.log(stateObject.data[stateObject.activeId].points);
+      main.updateGeometry();
     },
   };
 };
@@ -324,11 +342,6 @@ function checkButtons() {
   } else {
     main.redoBtn.disabled = false;
   }
-}
-
-function updateGeometry() {
-  main.updateCircles(stateObject.activeId);
-  main.updatePolyline(stateObject.activeId);
 }
 
 export {

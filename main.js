@@ -264,15 +264,8 @@ function draggedGroup(d) {
 function dragendGroup() {
   if (this.id === activeId()) {
     temporaryPoint = null;
-    temporaryPoints = Array.from(points(activeId()));
-
-    temporaryPoints = temporaryPoints.forEach(function (point) {
-      point[0] += delta.x;
-      point[1] += delta.y;
-    });
-
-    doCommand(movePath, temporaryPoints);
-    temporaryPoints = [];
+    doCommand(movePath, delta);
+    d3.select(this).attr("transform", "translate(0,0)");
   }
 }
 
@@ -318,6 +311,11 @@ function ptHoverOff(circle) {
     .duration(100)
     .attr("r", pointRadius)
     .attr("fill", "rgba(255, 255, 255, 0.5)");
+}
+
+function updateGeometry() {
+  updateCircles(activeId());
+  updatePolyline(activeId());
 }
 
 function updateCircles(id) {
@@ -442,4 +440,4 @@ function roundToSnap(position, resolution) {
     : position + resolution - (position % resolution);
 }
 
-export { undoBtn, redoBtn, updateCircles, updatePolyline };
+export { undoBtn, redoBtn, updateCircles, updatePolyline, updateGeometry };
