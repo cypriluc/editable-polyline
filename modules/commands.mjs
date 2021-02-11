@@ -79,6 +79,7 @@ const createMovePointCommand = (stateObject, ptObj) => {
 
 const createTransformGroupCommand = (stateObject, translation) => {
   const previousTranslation = translation;
+
   return {
     execute() {
       for (
@@ -282,7 +283,6 @@ function colorActive() {
 }
 
 function addPathsEvent() {
-  console.log("____ADD_PATH_EVENT__");
   let allPaths = document.getElementsByClassName("path-group");
   let inActivePaths = [];
   let currentMode = CURRENT_MODE.get();
@@ -296,7 +296,6 @@ function addPathsEvent() {
       path.addEventListener("click", function (e) {
         let newActiveId = e.target.parentNode.getAttribute("id");
         if (newActiveId != stateObject.activeId && currentMode != 0) {
-          console.log("___NEW_ACTIVE_ID__");
           commandManager.doCommand(ACTIVE, newActiveId);
         }
       });
