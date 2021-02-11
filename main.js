@@ -281,11 +281,11 @@ function draggedGroup(d) {
 
 function dragendGroup() {
   if (this.id === activeId()) {
+    doCommand(movePath, delta);
+    d3.select(this).attr("transform", "translate(0,0)");
     temporaryPoint = null;
     boxOffset = {};
     delta = {};
-    doCommand(movePath, delta);
-    d3.select(this).attr("transform", "translate(0,0)");
   }
 }
 
