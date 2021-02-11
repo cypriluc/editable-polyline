@@ -14,17 +14,24 @@ Clone or download the repository and run the files locally through a local web s
 
 ## Usage
 
-![polyline](https://user-images.githubusercontent.com/64001284/106741109-90894f00-661b-11eb-95e1-d2aec52124a0.png)
+![screen](https://user-images.githubusercontent.com/64001284/107651753-29554580-6c80-11eb-8919-322b60593b97.png)
 
 Start drawing a polyline by clicking on the canvas.
 
 Finish the polyline by:
-* click on the last point / or press Esc key -> as opened polyline
-* click on the first point / or press Enter key -> as closed polyline
+* _click on the last point_ / or press _Esc key_ -> as opened polyline
+* _click on the first point_ / or press _Enter key_ -> as closed polyline
 
-Edit polyline shape by dragging polyline control points
+Select active polyline:
+* _click on the inactive polyline_ -> in edit or move mode
+
+Deselect active polyline:
+* _Esc key_ -> when not drawing
 
 ### Navigation panel buttons:
+* _Draw_ -> mode to draw polylines on canvas
+* _Edit_ -> mode to edit active polyline shape - drag by control points
+* _Move_ -> mode to drag whole polyline within the canvas
 
 * _Show grid_ -> toggle the grid visibility on and off
 * _Snap_ -> toggle snapping to the grid on and off
