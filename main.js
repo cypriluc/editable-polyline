@@ -272,6 +272,7 @@ function draggedGroup(d) {
     };
 
     if (snap) {
+      //check if the first point of the path is snapped, if not, count the first delta differently
       delta.x = roundToSnap(delta.x, resolution());
       delta.y = roundToSnap(delta.y, resolution());
     }
