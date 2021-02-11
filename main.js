@@ -41,6 +41,7 @@ let cursorPosition = PATH_STATES.cursorPosition.noPoint,
   activePtIndex,
   temporaryPoints = [],
   snap = true,
+  boxOffset = {},
   delta = {};
 
 // return values from undo-redo.mjs
@@ -243,29 +244,49 @@ function dragend() {
   }
 }
 
-// doplnit attr.("transform", "translate(deltaX, deltaY") - temporary points ala dragged()
 function startedGroup(d) {
   if (this.id === activeId()) {
     temporaryPoint = [d.x, d.y];
+    const pathBox = d3.select(this).select("path").node().getBBox();
+    boxOffset = {
+      xMax: svgWidth - (pathBox.x + pathBox.width),
+      xMin: -pathBox.x,
+      yMin: -pathBox.y,
+      yMax: svgHeight - (pathBox.y + pathBox.height),
+    };
   }
 }
 
 function draggedGroup(d) {
   if (this.id === activeId()) {
     let currentPoint = [d.x, d.y];
+    let diffX = currentPoint[0] - temporaryPoint[0],
+      diffY = currentPoint[1] - temporaryPoint[1];
+
+    let limitedX = Math.max(boxOffset.xMin, Math.min(boxOffset.xMax, diffX));
+    let limitedY = Math.max(boxOffset.yMin, Math.min(boxOffset.yMax, diffY));
+
     delta = {
-      x: currentPoint[0] - temporaryPoint[0],
-      y: currentPoint[1] - temporaryPoint[1],
+      x: limitedX,
+      y: limitedY,
     };
+
+    if (snap) {
+      //check if the first point of the path is snapped, if not, count the first delta differently
+      delta.x = roundToSnap(delta.x, resolution());
+      delta.y = roundToSnap(delta.y, resolution());
+    }
     d3.select(this).attr("transform", `translate(${delta.x}, ${delta.y})`);
   }
 }
 
 function dragendGroup() {
   if (this.id === activeId()) {
-    temporaryPoint = null;
     doCommand(movePath, delta);
     d3.select(this).attr("transform", "translate(0,0)");
+    temporaryPoint = null;
+    boxOffset = {};
+    delta = {};
   }
 }
 
