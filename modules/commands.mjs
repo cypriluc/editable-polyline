@@ -26,21 +26,28 @@ const createSetActiveIdCommand = (stateObject, id) => {
   };
 };
 
-const createNewSvgGroupCommand = (stateObject) => {
+const createNewSvgGroupCommand = (stateObject, groupObj) => {
+  const previousActiveId = stateObject.activeId;
   return {
     execute() {
+      stateObject.activeId = groupObj.id;
+      colorActive();
       stateObject.data[stateObject.activeId] = {
         points: [],
         drawingStatus: PATH_STATES.drawingStatus.drawing,
         polylineType: PATH_STATES.polylineType.opened,
       };
-      // update DOM
+
       appendSvgGroup(stateObject.activeId);
+      stateObject.data[stateObject.activeId].points.push(groupObj.point);
+      main.updateGeometry();
     },
     undo() {
       delete stateObject.data[stateObject.activeId];
       // remove group from DOM
       svgGeometry.select("#" + stateObject.activeId).remove();
+      stateObject.activeId = previousActiveId;
+      colorActive();
     },
   };
 };

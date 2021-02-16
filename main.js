@@ -201,7 +201,7 @@ function removeMoveListeners() {
 function drawPath(d) {
   if (drawingStatus(activeId())) {
     if (cursorPosition === 0) {
-      addNewPoint(d);
+      addNewPoint(d, false);
     }
     if (cursorPosition === 1 && points(activeId()).length > 2) {
       finishClosedPolyline();
@@ -210,8 +210,7 @@ function drawPath(d) {
       finishOpenedPolyline();
     }
   } else {
-    createNewGroup();
-    addNewPoint(d);
+    addNewPoint(d, true);
   }
 }
 
@@ -290,10 +289,12 @@ function dragendGroup() {
   }
 }
 
-function createNewGroup() {
+function createNewGroup(startPt) {
   let newId = generateId();
-  doCommand(setActive, newId);
-  doCommand(createGroup);
+  doCommand(createGroup, {
+    id: newId,
+    point: startPt,
+  });
 }
 
 function generateId() {
@@ -305,7 +306,7 @@ function generateId() {
   return newId;
 }
 
-function addNewPoint(d) {
+function addNewPoint(d, newGroup) {
   let mouseX = d.layerX,
     mouseY = d.layerY,
     newPoint = [mouseX, mouseY];
@@ -315,7 +316,11 @@ function addNewPoint(d) {
       roundToSnap(mouseY, resolution()),
     ];
   }
-  doCommand(addPt, newPoint);
+  if (newGroup) {
+    createNewGroup(newPoint);
+  } else {
+    doCommand(addPt, newPoint);
+  }
 }
 
 function ptHoverOn(circle) {
