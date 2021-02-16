@@ -110,7 +110,7 @@ const createTransformGroupCommand = (stateObject, translation) => {
   };
 };
 
-const createSwitchStatusCommand = (stateObject, statusObj) => {
+const createFinishPolylineCommand = (stateObject, plineType) => {
   const previousDrawingStatus =
     stateObject.data[stateObject.activeId].drawingStatus;
   const previousPolylineType =
@@ -119,9 +119,9 @@ const createSwitchStatusCommand = (stateObject, statusObj) => {
   return {
     execute() {
       stateObject.data[stateObject.activeId].drawingStatus =
-        statusObj.drawStatus;
-      stateObject.data[stateObject.activeId].polylineType = statusObj.plineType;
-      main.updatePolyline(stateObject.activeId);
+        PATH_STATES.drawingStatus.notDrawing;
+      stateObject.data[stateObject.activeId].polylineType = plineType;
+      main.drawingFinished();
     },
     undo() {
       stateObject.data[
@@ -193,7 +193,7 @@ const createClearCanvasCommand = (stateObject) => {
 
 const ADD = "ADD";
 const MOVE = "MOVE";
-const STATUS = "STATUS";
+const FINISH = "FINISH";
 const CLEAR = "CLEAR";
 const GROUP = "GROUP";
 const ACTIVE = "ACTIVE";
@@ -204,7 +204,7 @@ const commands = {
   [GROUP]: createNewSvgGroupCommand,
   [ADD]: createAddPointCommand,
   [MOVE]: createMovePointCommand,
-  [STATUS]: createSwitchStatusCommand,
+  [FINISH]: createFinishPolylineCommand,
   [CLEAR]: createClearCanvasCommand,
   [ACTIVE]: createSetActiveIdCommand,
   [DELETE]: createDeletePathCommand,
@@ -347,7 +347,7 @@ export {
   createStateObject,
   createAddPointCommand,
   createMovePointCommand,
-  createSwitchStatusCommand,
+  createFinishPolylineCommand,
   createClearCanvasCommand,
   createSetActiveIdCommand,
   createDeletePathCommand,
@@ -359,7 +359,7 @@ export {
   GROUP,
   ADD,
   MOVE,
-  STATUS,
+  FINISH,
   CLEAR,
   ACTIVE,
   DELETE,

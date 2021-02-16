@@ -29,7 +29,7 @@ const clearBtn = document.getElementById("clear-svg"),
 const doCommand = command.commandManager.doCommand,
   addPt = command.ADD,
   movePt = command.MOVE,
-  updateStatus = command.STATUS,
+  finishPolyline = command.FINISH,
   clearPoints = command.CLEAR,
   createGroup = command.GROUP,
   setActive = command.ACTIVE,
@@ -428,19 +428,11 @@ function setPath(data, id) {
 }
 
 function finishClosedPolyline() {
-  doCommand(updateStatus, {
-    drawStatus: PATH_STATES.drawingStatus.notDrawing,
-    plineType: PATH_STATES.polylineType.closed,
-  });
-  drawingFinished();
+  doCommand(finishPolyline, PATH_STATES.polylineType.closed);
 }
 
 function finishOpenedPolyline() {
-  doCommand(updateStatus, {
-    drawStatus: PATH_STATES.drawingStatus.notDrawing,
-    plineType: PATH_STATES.polylineType.opened,
-  });
-  drawingFinished();
+  doCommand(finishPolyline, PATH_STATES.polylineType.opened);
 }
 
 function getPtId(target) {
@@ -461,4 +453,11 @@ function roundToSnap(position, resolution) {
     : position + resolution - (position % resolution);
 }
 
-export { undoBtn, redoBtn, updateCircles, updatePolyline, updateGeometry };
+export {
+  undoBtn,
+  redoBtn,
+  updateCircles,
+  updatePolyline,
+  updateGeometry,
+  drawingFinished,
+};
