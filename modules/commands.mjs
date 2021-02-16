@@ -1,8 +1,7 @@
 import { PATH_STATES, CURRENT_MODE } from "./constants.mjs";
 import * as main from "../main.js";
 
-const svgGeometry = d3.select("#geometry"),
-  svg = d3.select("svg");
+const svgGeometry = d3.select("#geometry");
 
 const createStateObject = () => {
   return {
@@ -351,16 +350,7 @@ function checkButtons() {
 }
 
 export {
-  createStateObject,
-  createAddPointCommand,
-  createMovePointCommand,
-  createFinishPolylineCommand,
-  createClearCanvasCommand,
-  createSetActiveIdCommand,
-  createDeletePathCommand,
-  commands,
   colorActive,
-  createCommandManager,
   stateObject,
   commandManager,
   GROUP,
